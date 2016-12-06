@@ -1,0 +1,46 @@
+Acquisition mode
+0
+Samples per channel 
+176
+BLT Event number 
+1
+TRIGGER
+Coincidence level 
+0
+Software prompt-delay gate (0:off) 
+0
+Count all triggers
+0
+Internal trig polarity is negative:
+1
+Enable ext trigger: 
+0
+Enable software trigger: 
+0
+Enable ext trigger out propagation: 
+0
+Enable soft trigger out propagation: 
+0
+Ext signals polarity is NIM:
+1
+Post trigger setting: 
+279
+Samples over thr for trigger: 
+0
+CHANNELS:
+Ch 0 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 0 0 -2000 -1025 
+Ch 1 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -1025 
+Ch 2 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -2000 
+Ch 3 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -1025 
+Ch 4 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -1025 
+Ch 5 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -1025 
+Ch 6 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -1025 
+Ch 7 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - Threshold)
+1 1 1 -1025 -1025 
