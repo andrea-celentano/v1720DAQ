@@ -1,0 +1,14 @@
+#ifndef ENERGY_FUNCTION_HGUARD
+#define ENERGY_FUNCTION_HGUARD
+
+
+
+//for GetEnergySumv2. THESE are in ns
+#define START_ENERGY_V2 00 /*A. Celentano 12/12/2013. Lets took out here the peak position cut.*/
+#define WIDTH_ENERGY_V2 800
+#define MIN_WIDTH 5 /*In samples */
+
+double GetEnergySumv2(int *fadc,double *par);
+
+
+#endif
