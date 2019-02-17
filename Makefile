@@ -25,9 +25,9 @@ PACKAGE_LIBS = -L/lib -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm
 
 PACKAGE_CFLAGS = -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/freetype2 -I/usr/include/libpng12  
 
-LIBS	=	-L../fadc/lib -lfadc_analizer
+LIBS	=	-L./fadc/lib -lfadc_analizer
 
-INCLUDEDIR =	-I. -I../fadc/include
+INCLUDEDIR =	-I. -I./fadc/include
 
 OBJS	=       v1720.o  interface.o support.o callback.o
 
