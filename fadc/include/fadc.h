@@ -113,9 +113,9 @@ public:
   /* Some global "constants" */
   /* You never touch them (12 bit digitizer 250MHz clock) */
 
-  static const double LSB=0.4884;
-  static const double R=50;
-  static const double dT=4;
+  static constexpr double LSB=0.4884;
+  static constexpr double R=50;
+  static constexpr double dT=4;
 
 
 
