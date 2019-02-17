@@ -12,7 +12,7 @@ typedef struct{
 typedef struct{
   TFile *file;
   TTree *tree;
-  ofstream *file_txt;
+  std::ofstream *file_txt;
   uint32_t **read_buf; 
   uint32_t **write_buf;
 }button5_data;
