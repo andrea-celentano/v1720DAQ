@@ -46,7 +46,7 @@ $(EXE)	:	$(OBJS) $(MAIN)
 		/bin/rm -f $(EXE)
 		rootcint -f mydict.cxx -c MyLinkDef.h
 		$(CXX) $(INCLUDEDIR) -fPIC -O3 -c mydict.cxx $(ROOT_FLAGS) -o mydict.o
-		$(CC) $(FLAGS) $(INCLUDEDIR) $(PACKAGE_LIBS) $(DEBUG_LEVEL) $(PACKAGE_CFLAGS) -o $(EXE) $(OBJS) $(DEPLIBS) $(GTKFLAGS) $(GTKLIBS) $(ROOT_FLAGS) $(ROOT_LIBS) $(MAIN) mydict.o $(LIBS)
+		$(CC) $(FLAGS) $(INCLUDEDIR) $(PACKAGE_LIBS) $(DEBUG_LEVEL) $(PACKAGE_CFLAGS) -o $(EXE) $(OBJS) $(DEPLIBS) $(MAIN) mydict.o $(LIBS)  $(GTKFLAGS) $(GTKLIBS) $(ROOT_FLAGS) $(ROOT_LIBS)
 
 $(OBJS)	:	$(INCLUDES) Makefile
 
