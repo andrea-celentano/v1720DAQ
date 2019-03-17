@@ -140,8 +140,7 @@ GtkWidget* create_window2 (void){
   GtkWidget *checkbutton68;
   GtkWidget *hscale33;
   GtkWidget *label38;
-  GtkWidget *label39;
-  GtkWidget *hscale34;
+
   GtkWidget *label40;
   GtkWidget *hscale35;
 
@@ -563,56 +562,56 @@ GtkWidget* create_window2 (void){
   gtk_fixed_put (GTK_FIXED (fixed1), label36, 624, 576);
   gtk_widget_set_size_request (label36, 184, 16);
 
-  hscale1 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale1 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1024, 1, 0, 0)));
   gtk_widget_show (hscale1);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale1, 296, 96);
   gtk_widget_set_size_request (hscale1, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale1), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale1), 0);
 
-  hscale2 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale2 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
   gtk_widget_show (hscale2);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale2, 296, 136);
   gtk_widget_set_size_request (hscale2, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale2), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale2), 0);
 
-  hscale3 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale3 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0,0,1024, 1, 0, 0)));
   gtk_widget_show (hscale3);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale3, 296, 176);
   gtk_widget_set_size_request (hscale3, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale3), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale3), 0);
 
-  hscale4 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale4 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 000,1024, 1, 0, 0)));
   gtk_widget_show (hscale4);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale4, 296, 216);
   gtk_widget_set_size_request (hscale4, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale4), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale4), 0);
 
-  hscale5 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale5 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 000, 1024, 1, 0, 0)));
   gtk_widget_show (hscale5);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale5, 296, 256);
   gtk_widget_set_size_request (hscale5, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale5), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale5), 0);
 
-  hscale6 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale6 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1024, 1, 0, 0)));
   gtk_widget_show (hscale6);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale6, 296, 296);
   gtk_widget_set_size_request (hscale6, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale6), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale6), 0);
 
-  hscale7 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale7 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1024, 1, 0, 0)));
   gtk_widget_show (hscale7);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale7, 296, 336);
   gtk_widget_set_size_request (hscale7, 152, 48);
   gtk_scale_set_value_pos (GTK_SCALE (hscale7), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale7), 0);
 
-  hscale0 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale0 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
   gtk_widget_show (hscale0);
   gtk_fixed_put (GTK_FIXED (fixed1), hscale0, 296, 56);
   gtk_widget_set_size_request (hscale0, 152, 48);
@@ -758,17 +757,6 @@ GtkWidget* create_window2 (void){
   gtk_widget_set_size_request (hscale33, 152, 30);
   gtk_scale_set_digits (GTK_SCALE (hscale33), 0);
 
-  label39 = gtk_label_new (("Delay timeout ns\n(0: just prompt)"));
-  gtk_widget_show (label39);
-  gtk_fixed_put (GTK_FIXED (fixed1), label39, 680, 680);
-  gtk_widget_set_size_request (label39, 200, 32);
-
-  hscale34 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 2000000, 5, 0, 0)));
-  gtk_widget_show (hscale34);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale34, 712, 720);
-  gtk_widget_set_size_request (hscale34, 136, 30);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale34), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale34), 0);
 
   label40 = gtk_label_new (("N samples over thr"));
   gtk_widget_show (label40);
@@ -913,8 +901,6 @@ GtkWidget* create_window2 (void){
 
   GLADE_HOOKUP_OBJECT (window2, label38, "label38");
   GLADE_HOOKUP_OBJECT (window2, hscale33, "hscale33");
-  GLADE_HOOKUP_OBJECT (window2, label39, "label39");
-  GLADE_HOOKUP_OBJECT (window2, hscale34, "hscale34");
   GLADE_HOOKUP_OBJECT (window2, label40, "label40");
   GLADE_HOOKUP_OBJECT (window2, hscale35, "hscale35");
 
@@ -945,8 +931,6 @@ GtkWidget* create_window2 (void){
   gtk_widget_set_sensitive(hscale29,0); /*MBLT event number */
  
 
-  gtk_range_set_value(GTK_RANGE(hscale34),0); /*Coincidence level*/
-  gtk_widget_set_sensitive( hscale34,0); /*Coincidence level*/
 
 
 

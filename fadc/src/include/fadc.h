@@ -20,19 +20,16 @@ class fadc_analizer
     std::string m_description;
    
     double energy;
-    double (*m_function)(int *points,double *par);
-    vector <double> m_calibration;
+    double (*m_function)(unsigned short *points,double *par);
 
   public: 
     //first creator, no cal. constants
     energy_calculator(fadc_analizer& o_fadc,const std::string& name,const std::string& description);
     int SetFunction(double (*fun)(int *points,double *par)); //return is error code
-    double CalculateEnergy(int ch);
+    double CalculateEnergy();
     
-    int SetCalConstant(int ch,double o_costant);
-    int SetCalConstants(vector <double> o_calibration); //set the cal.constants
-    int SetCalConstants(double *o_calibration); //set the cal.constants
-    
+
+
     inline std::string GetName(){return m_name;}
     inline std::string GetDescription(){return m_description;}
     
@@ -48,14 +45,14 @@ class fadc_analizer
     std::string m_description;
    
     double time; //in ns
-    double (*m_function)(int *points,double *par);
+    double (*m_function)(unsigned short *points,double *par);
     
 
   public: 
     //first creator, no cal. constants
     time_calculator(fadc_analizer& o_fadc,const std::string& name,const std::string& description);
     int SetFunction(double (*fun)(int *points,double *par)); //return is error code
-    double CalculateTime(int ch);
+    double CalculateTime();
  
     
     inline std::string GetName(){return m_name;}
@@ -71,7 +68,6 @@ class fadc_analizer
 
 private:
 
-  int m_Nchannels;
 
 
  
@@ -86,7 +82,7 @@ private:
      The pointer to the array containing the fadc points.
      You never touch it. Use LoadEvent method instead
   */
-  vector < vector <int > > *points;
+  unsigned short *points;
   int m_SamplesPerChannel; //number of samples FOR EACH CHANNEL!!!
   /*
     The variables that are used in the calculations (as inputs and outputs)
@@ -99,9 +95,9 @@ private:
   int m_ped_width;
 
   
-  double *m_ped_mean,*m_ped_sigma;
-  double *m_peak_pos, *m_peak_val;
-  double *m_peak_start,*m_peak_end;
+  double m_ped_mean,m_ped_sigma;
+  double m_peak_pos, m_peak_val;
+  double m_peak_start,m_peak_end;
 
   energy_calculator ECalculator1; //the first energy calculator
   energy_calculator ECalculator2; //the first energy calculator
@@ -121,54 +117,40 @@ public:
 
 
 
-  fadc_analizer(int Nchannels);
+  fadc_analizer();
   ~fadc_analizer();
-  void Setup(int SamplesPerChannel=200,int PedWidth=60);
+  void Setup(int PedWidth=60);
   
-  int LoadEvent(vector <vector <int> > *samples); //the function to load data for the event
+  int LoadEvent(unsigned short *samples,unsigned int N); //the function to load data for the event
   int ProcessEvent(); //the function to tell the class to do the common calculations
 
 
   /*Here are the function that calculates things*/
   /*They save everything in the relevant private variables*/
-  int CalculatePedestal(int ch); //calculate pedestal mean and sigma in mV
-  int CalculatePeak(int ch); //the peak position in ns and the peak value in mV
-  int CalculatePeakLimits(int ch); //the pulse start and end in ns (integration limits)   
-  int CalculateEnergy(int ch,int method);
+  int CalculatePedestal(); //calculate pedestal mean and sigma in mV
+  int CalculatePeak(); //the peak position in ns and the peak value in mV
+  int CalculatePeakLimits(); //the pulse start and end in ns (integration limits)
+  int CalculateEnergy(int method);
 
 
 
   //here are the functions to get back what we (commonly used variables);
-  double GetPedMean(int ch); //in mV
-  double GetPedSigma(int ch); //in mV
-  double GetPeakPosition(int ch); //in ns
-  double GetPeakValue(int ch); //in mV
-  double GetPeakStart(int ch); //in ns
-  double GetPeakEnd(int ch); //in ns
+  double GetPedMean(); //in mV
+  double GetPedSigma(); //in mV
+  double GetPeakPosition(); //in ns
+  double GetPeakValue(); //in mV
+  double GetPeakStart(); //in ns
+  double GetPeakEnd(); //in ns
 
   //The same as above, but as c vector (for all channels)
   
-  double* GetPedMean(); //in mV
-  double* GetPedSigma(); //in mV
-  double* GetPeakPosition(); //in ns
-  double* GetPeakValue(); //in mV
-  double* GetPeakStart(); //in ns
-  double* GetPeakEnd(); //in ns
 
   //here is the function to get back the energy
-  double GetEnergy(int ch,int method);
+  double GetEnergy(int method);
   void PrintEnergyMethods();
   
-
-  //here goes the functions to load the cal.constants for the various energy calculators.
-  //first prototype: read them from a file (1 number for each channels of fadc).
-  int LoadCalConstants(int method,std::string o_fname);
-  //for all calculators
-  inline int LoadCalConstantsAll(std::string o_fname){int ret=0;for (int ii=0;ii<m_energy_calculators.size();ii++) ret+=LoadCalConstants(ii,o_fname);return ret;};
-
-
  //here is the function to get back the timw
-  double GetTime(int ch,int method);
+  double GetTime(int method);
   void PrintTimeMethods();
 
 

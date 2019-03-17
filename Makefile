@@ -1,6 +1,6 @@
 EXE	=	main
 
-MAIN = main.c
+MAIN = main.cc
 
 CC	=	g++ 
 

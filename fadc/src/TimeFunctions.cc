@@ -4,7 +4,7 @@
 /* In this file I put All the functions used to calculate the time for a channel
 
 Don't care about the structure: they are always
-double function(int *fadc,double *par).
+double function(unsigned short *fadc,double *par).
 
 fadc --> array of fadc data (for 1 channel!) in "bits", not in mV
 par --> some parameters already calculated. 
@@ -23,7 +23,7 @@ par --> some parameters already calculated.
  
 //This is the same functions that is implemented now in the FADC250
 
-double GetTimeFADC250Firmware(int *fadc, double *par){
+double GetTimeFADC250Firmware(unsigned short *fadc, double *par){
   
   double energy_tot=0;
   
