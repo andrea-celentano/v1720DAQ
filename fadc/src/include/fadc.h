@@ -25,7 +25,7 @@ class fadc_analizer
   public: 
     //first creator, no cal. constants
     energy_calculator(fadc_analizer& o_fadc,const std::string& name,const std::string& description);
-    int SetFunction(double (*fun)(int *points,double *par)); //return is error code
+    int SetFunction(double (*fun)(unsigned short *points,double *par)); //return is error code
     double CalculateEnergy();
     
 
@@ -51,7 +51,7 @@ class fadc_analizer
   public: 
     //first creator, no cal. constants
     time_calculator(fadc_analizer& o_fadc,const std::string& name,const std::string& description);
-    int SetFunction(double (*fun)(int *points,double *par)); //return is error code
+    int SetFunction(double (*fun)(unsigned short *points,double *par)); //return is error code
     double CalculateTime();
  
     
@@ -109,9 +109,9 @@ public:
   /* Some global "constants" */
   /* You never touch them (12 bit digitizer 250MHz clock) */
 
-  static const double LSB=0.4884;
-  static const double R=50;
-  static const double dT=4;
+  static constexpr double LSB=0.4884;
+  static constexpr double R=50;
+  static constexpr double dT=4;
 
 
 

@@ -12,8 +12,8 @@
 #define PRE_SAMPLES 5
 #define POST_SAMPLES 10
 
-double GetEnergySumv2(int *fadc,double *par);
-double GetEnergySum(int *fadc,double *par);
+double GetEnergySumv2(unsigned short *fadc,double *par);
+double GetEnergySum(unsigned short *fadc,double *par);
 
 
 #endif

@@ -24,7 +24,7 @@ fadc_analizer::energy_calculator::energy_calculator(fadc_analizer& o_fadc, const
  5 -> integration end in SAMPLES (NOT ns)
  6 -> samples per channel
  */
-int fadc_analizer::energy_calculator::SetFunction(double (*fun)(int *points, double *par)) {
+int fadc_analizer::energy_calculator::SetFunction(double (*fun)(unsigned short *points, double *par)) {
 	m_function = fun;
 	return 0;
 }
@@ -60,7 +60,7 @@ fadc_analizer::time_calculator::time_calculator(fadc_analizer& o_fadc, const std
  5 -> integration end in SAMPLES (NOT ns)
  6 -> Number of samples
  */
-int fadc_analizer::time_calculator::SetFunction(double (*fun)(int *points, double *par)) {
+int fadc_analizer::time_calculator::SetFunction(double (*fun)(unsigned short *points, double *par)) {
 	m_function = fun;
 	return 0;
 }
@@ -76,7 +76,7 @@ double fadc_analizer::time_calculator::CalculateTime() {
 	par[5] = m_fadc.m_peak_end / m_fadc.dT;
 	par[6] = m_fadc.m_SamplesPerChannel;
 
-	time = m_function(m_fadc.points[0], par);
+	time = m_function(m_fadc.points, par);
 	delete par;
 	return time;
 }
@@ -151,7 +151,7 @@ int fadc_analizer::LoadEvent(unsigned short *samples, unsigned int N) {
 int fadc_analizer::ProcessEvent() {
 	int ret = 0;
 
-	ret += CalculatePedestal;
+	ret += CalculatePedestal();
 	ret += CalculatePeak();
 	ret += CalculatePeakLimits();
 
