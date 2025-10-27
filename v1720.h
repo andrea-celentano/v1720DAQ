@@ -2,9 +2,16 @@
 
 /* single channel registers map */
 /* You should sum to this values 0x0n00, with n:0...7 */
-#define NCH 8
-#define Nbit 12
-#define mVmax 2000
+
+#ifdef V1725
+  #define NCH    16     // V1725 has 16 channels
+  #define Nbit   14     // V1725 has 14-bit ADC
+  #define mVmax  2000   // Example: different voltage range
+#else
+  #define NCH    8      // Default (e.g., V1720)
+  #define Nbit   12
+  #define mVmax  2000
+#endif
 
 #define V1720zs_thres  0x1024       
 #define V1720zs_nsamp 0x1028     

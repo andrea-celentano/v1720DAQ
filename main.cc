@@ -33,7 +33,7 @@ extern "C" {
 #define MAX_LENGTH 4100
 #define FADC_HEADER 0xA //1010->MSB of the Header of the Board.
 
-#define FADC_CHANNELS_PER_BOARD 8
+#define FADC_CHANNELS_PER_BOARD NCH
 
 /*TRIGGER TIME TAG IS A 31 bit counter.*/
 #define TIME_OVFL 0x7FFFFFFF
@@ -203,14 +203,14 @@ void decode_event(int event_size) {
 					this_event.nFADC[thechannel][ipulse] = isize2 * 2;
 
 					for (int kk = 0; kk < isize2; kk++) {
-						fadc_data1 = (*write_buf) & 0xFFF;
-						fadc_data2 = ((*write_buf) >> 16) & 0xFFF;
+ 					        fadc_data1 = (*write_buf) & 0x3FFF;             //A.C. set to 3FFF on 27/10/2025: it is ok also for v1720 (bits are 0)
+						fadc_data2 = ((*write_buf) >> 16) & 0x3FFF;     //A.C. set to 3FFF on 27/10/2025: it is ok also for v1720 (bits are 0)
 						*write_buf = 0x0;
 						write_buf++;
 						ii++;
 						jj++;
-						fadc_data1 = -0xFFF + fadc_data1; //THESE ARE bits, not mV
-						fadc_data2 = -0xFFF + fadc_data2; //THESE ARE bits, not mV
+						fadc_data1 = -(pow(2,Nbit)-1) + fadc_data1; //THESE ARE bits, not mV
+						fadc_data2 = -(pow(2,Nbit)-1) + fadc_data2; //THESE ARE bits, not mV
 						this_event.fadc[thechannel][ipulse][isample++] = fadc_data1;
 						this_event.fadc[thechannel][ipulse][isample++] = fadc_data2;
 					}
