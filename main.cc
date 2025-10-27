@@ -307,7 +307,7 @@ void * gui_fun(void *arg) {
 	GtkWidget *button;
 
 	/*****We have only three callbacks for the whole configuration panel*****/
-	button = lookup_widget(window2, "button1");
+	button = lookup_widget(window2, "button1"); /*Apply*/
 	window2_data window2_data_temp;
 	window2_data_temp.window1T = window1;
 	window2_data_temp.board = &bd;

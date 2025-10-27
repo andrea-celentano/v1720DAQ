@@ -153,10 +153,11 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 	GtkWidget *widget;
 	int ii;
 	char name[100];
+	char buffer[100];
 	double val, val1, val2;
 	double DACoffset[NCH];
 	int coinc_level;
-	int delay;
+
 
 	/*Acquisition Mode */
 	bd->run_mode = 0;
@@ -377,8 +378,7 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
-		DACoffset[ii] = gtk_range_get_value(GTK_RANGE(widget));
-
+		DACoffset[ii] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 		val = -(DACoffset[ii]) * (pow(2., 16.) - 1) / 2000;
 		int dacdac;
 		dacdac = (int) val;
@@ -386,10 +386,10 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 		printf("Channel %i, offset (mV): %f ----> %i , %x \n", ii, DACoffset[ii], dacdac, dacdac);
 
 		bd->ch[ii].dac = dacdac;
-
+		
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
-		val1 = gtk_range_get_value(GTK_RANGE(widget));
+		val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 
 		dacdac = (int) val1;
 
@@ -405,7 +405,72 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 		bd->ch[ii].trig_n_over_thr = n_samples_thr;
 
 	}
+	/*single ch configuration v1725 */
+#ifdef V1725
+	for (ii = 0; ii < NCH; ii++) {
+	  sprintf(name, "checkbutton0B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  if (GTK_TOGGLE_BUTTON(widget)->active) {
+	    printf("Chanell %i enabled\n", ii);
+	    bd->ch[ii].enabled = 1;
+	    
+	  } else {
+	    printf("Channel %i disabled\n", ii);
+	    bd->ch[ii].enabled = 0;
+	  }
+	  sprintf(name, "checkbutton1B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  if (GTK_TOGGLE_BUTTON(widget)->active) {
+	    printf("Chanell %i trigger enabled\n", ii);
+	    bd->ch[ii].trig_enabled = 1;
+	    
+	  } else {
+	    printf("Channel %i trigger disabled\n", ii);
+	    bd->ch[ii].trig_enabled = 0;
+	  }
 
+	  sprintf(name, "checkbutton2B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  if (GTK_TOGGLE_BUTTON(widget)->active) {
+	    printf("Chanell %i propagate trigger enabled\n", ii);
+	    bd->ch[ii].trig_out_enabled = 1;
+	    
+	  } else {
+	    printf("Channel %i propagate trigger disabled\n", ii);
+	    bd->ch[ii].trig_out_enabled = 0;
+	  }
+	  
+	  sprintf(name, "hscale0B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  DACoffset[ii] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
+	  val = -(DACoffset[ii]) * (pow(2., 16.) - 1) / 2000;
+	  int dacdac;
+	  dacdac = (int) val;
+	  
+	  printf("Channel %i, offset (mV): %f ----> %i , %x \n", ii, DACoffset[ii], dacdac, dacdac);
+	  bd->ch[ii].dac = dacdac;
+	  
+	  sprintf(name, "hscale1B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
+	  
+	  dacdac = (int) val1;
+	  
+	  printf("Channel %i, ZLE thr: %i (0x%x) \n", ii, val1, dacdac);
+	  
+	  bd->ch[ii].zle_thr = dacdac;
+	  
+	  //trig n over thr. Now is common to all channels
+	  widget = lookup_widget(window, "hscale35");
+	  val = gtk_range_get_value(GTK_RANGE(widget));
+	  int n_samples_thr = (int) val;
+	  printf("Number n of samples over thr is %i \n", n_samples_thr * 4);
+	  bd->ch[ii].trig_n_over_thr = n_samples_thr;
+
+	}
+#endif
+
+	
 	/*abilito start. Disabilito anche il quit */
 
 	widget = lookup_widget(window1, "button3");
@@ -468,7 +533,7 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 	double val, val1, val2;
 	double DACoffset[NCH];
 	int coinc_level;
-	int delay;
+
 
 	ofstream
 	file("settings.txt");
@@ -586,13 +651,7 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 	file << "Coincidence level " << endl;
 	file << coinc_level << endl;
 
-	/*PROMPT-DELAY COINCIDENCE SOFTWARE */
-	widget = lookup_widget(window, "hscale34");
-	val = gtk_range_get_value(GTK_RANGE(widget));
-	delay = (int) val;
 
-	file << "Software prompt-delay gate (0:off) " << endl;
-	file << delay << endl;
 
 	file << "Count all triggers" << endl;
 	widget = lookup_widget(window, "radiobutton1");
@@ -693,12 +752,12 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
-		DACoffset[ii] = atof(gtk_entry_get_text(GTK_RANGE(widget)));
+		DACoffset[ii] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 		file << DACoffset[ii] << " ";
 
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
-		val1 = atof(gtk_entry_get_text(GTK_RANGE(widget)));
+		val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 		file << val1 << " ";
 
 		file << endl;
@@ -715,7 +774,7 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 	  } else {
 	    file << "0 ";
 	  }
-	  sprintf(name, "checkbutton1B_%i", ii + 10);
+	  sprintf(name, "checkbutton1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  if (GTK_TOGGLE_BUTTON(widget)->active) {
 	    file << "1 ";
@@ -723,7 +782,7 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 	    file << "0 ";
 	  }
 
-	  sprintf(name, "checkbutton2B_%i", ii + 20);
+	  sprintf(name, "checkbutton2B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  if (GTK_TOGGLE_BUTTON(widget)->active) {
 	    file << "1 ";
@@ -731,12 +790,12 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 	    file << "0 ";
 	  }
 		
-	  sprintf(name, "hscale0B_%i", ii + 10);
+	  sprintf(name, "hscale0B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  DACoffset[ii+8] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 	  file << DACoffset[ii] << " ";
 
-	  sprintf(name, "hscale1B_%i", ii + 0);
+	  sprintf(name, "hscale1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 	  file << val1 << " ";
@@ -762,8 +821,8 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	double val, val1, val2;
 	double DACoffset[NCH];
 	int coinc_level;
-	int delay;
 	int tmp;
+	double tmpF;
 	string stmp;
 
 	ifstream
@@ -891,13 +950,7 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	widget = lookup_widget(window, "hscale33");
 	gtk_range_set_value(GTK_RANGE(widget), tmp);
 
-	/*PROMPT-DELAY COINCIDENCE SOFTWARE */
-	file.ignore();
-	file.ignore(1000, '\n');
-	file >> tmp;
 
-	widget = lookup_widget(window, "hscale34");
-	gtk_range_set_value(GTK_RANGE(widget), tmp);
 
 	file.ignore();
 	file.ignore(1000, '\n');
@@ -1017,16 +1070,17 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
-		file >> tmp;
-		snprintf(buffer, sizeof(buffer), "%.2f",tmp);
-		gtk_entry_set_text(GTK_RANGE(widget),buffer);
+		file >> tmpF;
+		snprintf(buffer, sizeof(buffer), "%.2f",tmpF);
+		printf("load_callback, dac ch %i: %f\n",ii,tmpF);
+		gtk_entry_set_text(GTK_ENTRY(widget),buffer);
 
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
-		file >> tmp;
-		snprintf(buffer, sizeof(buffer), "%.2f",tmp);
-		gtk_entry_set_text(GTK_RANGE(widget),buffer);
-		printf("%i %i aa \n", ii, tmp);
+		file >> tmpF;
+		snprintf(buffer, sizeof(buffer), "%.2f",tmpF);
+		printf("load_callback, ZLE ch %i: %f\n",ii,tmpF);
+		gtk_entry_set_text(GTK_ENTRY(widget),buffer);
 		file.ignore();
 	}
 #ifdef V1725
@@ -1041,7 +1095,7 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	  else
 	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
 	  
-	  sprintf(name, "checkbutton1B_%i", ii + 10);
+	  sprintf(name, "checkbutton1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  file >> tmp;
 	  if (tmp)
@@ -1049,7 +1103,7 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	  else
 	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
 	  
-	  sprintf(name, "checkbutton2B_%i", ii + 20);
+	  sprintf(name, "checkbutton2B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  file >> tmp;
 	  if (tmp)
@@ -1057,13 +1111,13 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	  else
 	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
 	  
-	  sprintf(name, "hscale0B_%i", ii + 10);
+	  sprintf(name, "hscale0B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  file >> tmp;
 	  snprintf(buffer, sizeof(buffer), "%.2f",tmp);
 	  gtk_entry_set_text(GTK_ENTRY(widget),buffer);
 	  
-	  sprintf(name, "hscale1B_%i", ii + 0);
+	  sprintf(name, "hscale1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  file >> tmp;
 	  snprintf(buffer, sizeof(buffer), "%.2f",tmp);
