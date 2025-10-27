@@ -14,7 +14,7 @@ DEBUG_LEVEL = -DNODEBUG
 FLAGS	=	-Wall -s
 #FLAGS	=	-Wall
 
-DEPLIBS	=       -l CAENVME -l ncurses -lc -lm -l CAENComm -lpthread
+DEPLIBS	=       -L. -l CAENVME -l ncurses -lc -lm -l CAENComm -lpthread
 
 GTKFLAGS = `pkg-config --cflags gtk+-2.0` 
 
