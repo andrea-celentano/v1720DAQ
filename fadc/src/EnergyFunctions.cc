@@ -4,7 +4,7 @@
 /* In this file I put All the functions used to calculate the energy for a channel
 
 Don't care about the structure: they are always
-double function(int *fadc,double *par).
+double function(unsigned short *fadc,double *par).
 
 fadc --> array of fadc data (for 1 channel!) in "bits", NOT in mV
 par --> some parameters already calculated. 
@@ -20,7 +20,7 @@ par --> some parameters already calculated.
 
 /*If YOU need some "costants" (i.e. #define xxx) please put it in EnergyFunctions.h*/
 
-double GetEnergySumv2(int *fadc, double *par){
+double GetEnergySumv2(unsigned short *fadc, double *par){
   
   double energy_tot=0;
   double& ped_mean=par[0];
@@ -48,7 +48,7 @@ double GetEnergySumv2(int *fadc, double *par){
 }
 
 /*Fixed integration window centered on the peak position*/
-double GetEnergySum(int *fadc, double *par){
+double GetEnergySum(unsigned short *fadc, double *par){
   
   double energy_tot=0;
   double& ped_mean=par[0];

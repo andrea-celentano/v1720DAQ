@@ -8,7 +8,7 @@
 
 #define V1720zs_thres  0x1024       
 #define V1720zs_nsamp 0x1028     
-#define V1720threshold 0x1080        
+#define V1720threshold 0x1080
 #define V1720ndata_over_under_threshold 0x1084        
 #define V1720status 0x1088     
 #define V1720amc_fpga_firmware_rev 0x108C      
@@ -103,8 +103,13 @@ typedef struct{
   int trig_enabled; /*is the channel going to trigger the system(1) or not (0) */
   int trig_out_enabled; /*If this channel triggers, the out trig is enabled (1) or not (0) */
   int trig_thr; /*in ADC counts (12 bits) */
+  int zle_thr; /*in ADC counts (12 bits) */
+  int zle_pre; /*how many ZLE pre-samples*/
+  int zle_post; /*how many ZLE post-samples*/
   int trig_n_over_thr; /*How many (4/5) samples should stay at least under/over thr to trigger */
   int dac; /* DAC valuprintf("I'm going to read %i words \n",n_words_per_channel);e for the channel, in DAC)(16 bits) counts */
+
+  int baseline; /*The baseline value in DAC counts*/
 }V1720_channel;
 
 /* structure to hold informations for the board */
@@ -141,7 +146,6 @@ typedef struct {
   int post_trigger_setting;
   int n_samples_over_thr;
   int front_panel_nim_ttl; /*0: NIM, 1: TTL*/
-  uint32_t prompt_delay_coincidence; /*Software based prompt-delay trigger, in counts=8 ns. 0 means no delay coincidence.*/
 
 
   /*VME Control */
@@ -209,6 +213,7 @@ int v1720SetChannelDACOffset(int handle,int ch,int DACoffset);
 int v1720SetChannelNdataOverUnderThreshold(int handle,int ch,int ndata);
 int v1720SetChannelTrigThreshold(int handle,int ch,int threshold);
 int v1720SetChannelZSNsamples(int handle,int ch,int nsamples);
+int v1720SetChannelZSSamplesPREPOST(int handle, int ch, int npre,int npost);
 int v1720GetChannelZSThreshold(int handle,int ch);
 int v1720SetChannelZSThreshold(int handle,int ch,int logic,int threshold);
 int v1720Reset(int handle);
@@ -218,4 +223,8 @@ int v1720Init(V1720_board *bd);
 int v1720StartStopAcquisition(int handle,int flag); /*0: stop. 1:start */
 
 /*Function used to auto-set the DC offset of the board, for negative polarity*/
-int v1720AutoSetDCOffset(int handle,int ch,double baseline_goal);
+int v1720AutoSetDCOffset(int handle,int ch,double baseline_goal,int *ret_baseline);
+
+/*Function used to get mean*/
+int v1720GetMean(int handle,int ch);
+
