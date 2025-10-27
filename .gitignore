@@ -1,2 +1,5 @@
 *.root
 *.o
+mydict_rdict.pcm
+*~
+mydict.cxx
