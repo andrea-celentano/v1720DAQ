@@ -443,7 +443,7 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 	for (int ii = 0; ii < NCH; ii++) {
 		int ret;
 		if (bd->ch[ii].enabled == 1) {
-			ret = v1720GetMean(bd->handle, ii);
+		  //ret = v1720GetMean(bd->handle, ii);
 			bd->ch[ii].dac = ret;
 		}
 	}
@@ -665,7 +665,7 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 
 	file << "CHANNELS:" << endl;
 	/*single ch configuration */
-	for (ii = 0; ii < NCH; ii++) {
+	for (ii = 0; ii < 8; ii++) {
 		file << "Ch " << ii << " (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)" << endl;
 
 		sprintf(name, "checkbutton%i", ii);
@@ -693,17 +693,59 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
-		DACoffset[ii] = gtk_range_get_value(GTK_RANGE(widget));
+		DACoffset[ii] = atof(gtk_entry_get_text(GTK_RANGE(widget)));
 		file << DACoffset[ii] << " ";
 
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
-		val1 = gtk_range_get_value(GTK_RANGE(widget));
+		val1 = atof(gtk_entry_get_text(GTK_RANGE(widget)));
 		file << val1 << " ";
 
 		file << endl;
 	}
-	file.close();
+
+	#ifdef V1725
+	for (ii = 0; ii < 8; ii++) {
+	  file << "Ch " << ii+8 << " (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)" << endl;
+
+	  sprintf(name, "checkbutton0B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  if (GTK_TOGGLE_BUTTON(widget)->active) {
+	    file << "1 ";
+	  } else {
+	    file << "0 ";
+	  }
+	  sprintf(name, "checkbutton1B_%i", ii + 10);
+	  widget = lookup_widget(window, name);
+	  if (GTK_TOGGLE_BUTTON(widget)->active) {
+	    file << "1 ";
+	  } else {
+	    file << "0 ";
+	  }
+
+	  sprintf(name, "checkbutton2B_%i", ii + 20);
+	  widget = lookup_widget(window, name);
+	  if (GTK_TOGGLE_BUTTON(widget)->active) {
+	    file << "1 ";
+	  } else {
+	    file << "0 ";
+	  }
+		
+	  sprintf(name, "hscale0B_%i", ii + 10);
+	  widget = lookup_widget(window, name);
+	  DACoffset[ii+8] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
+	  file << DACoffset[ii] << " ";
+
+	  sprintf(name, "hscale1B_%i", ii + 0);
+	  widget = lookup_widget(window, name);
+	  val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
+	  file << val1 << " ";
+	  
+	  file << endl;
+	}
+	#endif
+
+	file.close();	
 }
 
 void configure_load_callback(GtkWidget *window, gpointer data) {
@@ -716,6 +758,7 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	GtkWidget *widget;
 	int ii;
 	char name[100];
+	char buffer[100];
 	double val, val1, val2;
 	double DACoffset[NCH];
 	int coinc_level;
@@ -943,7 +986,7 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	file.ignore(1000, '\n');
 
 	/*single ch configuration */
-	for (ii = 0; ii < NCH; ii++) {
+	for (ii = 0; ii < 8; ii++) {
 
 		file.ignore();
 		file.ignore(1000, '\n');
@@ -975,15 +1018,62 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
 		file >> tmp;
-		gtk_range_set_value(GTK_RANGE(widget), tmp);
+		snprintf(buffer, sizeof(buffer), "%.2f",tmp);
+		gtk_entry_set_text(GTK_RANGE(widget),buffer);
 
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
 		file >> tmp;
-		gtk_range_set_value(GTK_RANGE(widget), tmp);
+		snprintf(buffer, sizeof(buffer), "%.2f",tmp);
+		gtk_entry_set_text(GTK_RANGE(widget),buffer);
 		printf("%i %i aa \n", ii, tmp);
 		file.ignore();
 	}
+#ifdef V1725
+	for (ii = 0; ii < 8; ii++) {
+	  file.ignore();
+	  file.ignore(1000, '\n');
+	  file >> tmp;
+	  sprintf(name, "checkbutton0B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  if (tmp)
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 1);
+	  else
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
+	  
+	  sprintf(name, "checkbutton1B_%i", ii + 10);
+	  widget = lookup_widget(window, name);
+	  file >> tmp;
+	  if (tmp)
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 1);
+	  else
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
+	  
+	  sprintf(name, "checkbutton2B_%i", ii + 20);
+	  widget = lookup_widget(window, name);
+	  file >> tmp;
+	  if (tmp)
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 1);
+	  else
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
+	  
+	  sprintf(name, "hscale0B_%i", ii + 10);
+	  widget = lookup_widget(window, name);
+	  file >> tmp;
+	  snprintf(buffer, sizeof(buffer), "%.2f",tmp);
+	  gtk_entry_set_text(GTK_ENTRY(widget),buffer);
+	  
+	  sprintf(name, "hscale1B_%i", ii + 0);
+	  widget = lookup_widget(window, name);
+	  file >> tmp;
+	  snprintf(buffer, sizeof(buffer), "%.2f",tmp);
+	  gtk_entry_set_text(GTK_ENTRY(widget), buffer);
+
+	  printf("%i %i aa \n", ii, tmp);
+	  file.ignore();
+	}
+#endif
+	
 	file.close();
 	gtk_window_present(GTK_WINDOW(gtk_widget_get_toplevel(window)));
 }

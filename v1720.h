@@ -2,6 +2,7 @@
 
 /* single channel registers map */
 /* You should sum to this values 0x0n00, with n:0...7 */
+#define V1725
 
 #ifdef V1725
   #define NCH    16     // V1725 has 16 channels

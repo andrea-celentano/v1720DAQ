@@ -17,7 +17,7 @@ int v1720Init(V1720_board *bd) { /*we need just a pointer to the V1720_board str
 	int res;
 	res = 0;
 	if (bd->handle == -1) {
-		res = CAENComm_OpenDevice(CAENComm_PCI_OpticalLink, 0, 0, 0, &(bd->handle));
+		res = CAENComm_OpenDevice(CAENComm_OpticalLink, 0, 0, 0, &(bd->handle));
 	}
 	if (res != 0) {
 		char err_code[50];
@@ -46,7 +46,7 @@ int v1720Init(V1720_board *bd) { /*we need just a pointer to the V1720_board str
 			v1720SetChannelNdataOverUnderThreshold(bd->handle, ii, bd->ch[ii].trig_n_over_thr);
 			v1720SetChannelDACOffset(bd->handle, ii, bd->ch[ii].dac);
 			v1720SetChannelZSThreshold(bd->handle, ii, 0, bd->ch[ii].zle_thr); /*Logic 0 is for negative threshold*/
-			v1720SetChannelZSSamplesPREPOST(bd->handle, ii, bd->ch[ii].zle_pre, bd->ch[ii].zle_post);
+			//	v1720SetChannelZSSamplesPREPOST(bd->handle, ii, bd->ch[ii].zle_pre, bd->ch[ii].zle_post);
 			bd->chan_mask = bd->chan_mask | ((bd->ch[ii].enabled) << ii);
 			bd->trig_chan_mask = bd->trig_chan_mask | ((bd->ch[ii].trig_enabled) << ii);
 			bd->trig_out_chan_mask = bd->trig_out_chan_mask | ((bd->ch[ii].trig_out_enabled) << ii);

@@ -15,9 +15,12 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 
-
+#include "v1720.h"
 #include "interface.h"
 #include "callback.h"
+#include <iostream>
+#include <string>
+#include <sstream>
 
 #define GLADE_HOOKUP_OBJECT(component,widget,name) \
   g_object_set_data_full (G_OBJECT (component), name, \
@@ -33,6 +36,11 @@ GtkWidget* create_window2 (void){
   GtkWidget *label10;
   GtkWidget *label11;
   GtkWidget *label12;
+
+  GtkWidget *label10B;
+  GtkWidget *label11B;
+  GtkWidget *label12B;
+  
   GtkWidget *label3;
   GtkWidget *label4;
   GtkWidget *label5;
@@ -150,6 +158,20 @@ GtkWidget* create_window2 (void){
   GtkWidget *radiobutton12;
 
 
+  //V1725
+  GtkWidget **labelB;
+  GtkWidget *label13B;
+  GtkWidget *label14B;
+  GtkWidget *label15B;
+  
+  
+  GtkWidget **checkbutton0B; //enabled
+  GtkWidget **checkbutton1B; //int-tr
+  GtkWidget **checkbutton2B; //Prop trg ext
+  GtkWidget **checkbutton3B; //AutoSet
+  GtkWidget **hscale0B;      //int trg thr
+  GtkWidget **hscale1B;      //dac val
+  
   window2 = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (window2), ("V1720 Configuration"));
 
@@ -167,14 +189,14 @@ GtkWidget* create_window2 (void){
   gtk_fixed_put (GTK_FIXED (fixed1), label10, 72, 32);
   gtk_widget_set_size_request (label10, 64, 32);
 
-  label11 = gtk_label_new (("Internal Trigger \nEnable"));
+  label11 = gtk_label_new (("Int Trg \nEnable"));
   gtk_widget_show (label11);
-  gtk_fixed_put (GTK_FIXED (fixed1), label11, 136, 24);
+  gtk_fixed_put (GTK_FIXED (fixed1), label11, 80, 24);
   gtk_widget_set_size_request (label11, 168, 40);
 
-  label12 = gtk_label_new (("Internal trigger thr (mV)"));
+  label12 = gtk_label_new (("Int trg thr \n(mV)"));
   gtk_widget_show (label12);
-  gtk_fixed_put (GTK_FIXED (fixed1), label12, 296, 16);
+  gtk_fixed_put (GTK_FIXED (fixed1), label12, 160, 20);
   gtk_widget_set_size_request (label12, 152, 40);
  
   label3 = gtk_label_new (("Ch 1"));
@@ -217,16 +239,12 @@ GtkWidget* create_window2 (void){
   gtk_fixed_put (GTK_FIXED (fixed1), label1, 0, 0);
   gtk_widget_set_size_request (label1, 208, 32);
 
-  label13 = gtk_label_new (("Propagate\ntrigger ext."));
+  label13 = gtk_label_new (("Prop\ntrg ext."));
   gtk_widget_show (label13);
-  gtk_fixed_put (GTK_FIXED (fixed1), label13, 504, 16);
+  gtk_fixed_put (GTK_FIXED (fixed1), label13, 250, 16);
   gtk_widget_set_size_request (label13, 96, 40);
 
-  checkbutton13 = gtk_check_button_new_with_mnemonic ("");
-  gtk_widget_show (checkbutton13);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton13, 176, 184);
-  gtk_widget_set_size_request (checkbutton13, 16, 16);
-
+  
   checkbutton0 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton0);
   gtk_fixed_put (GTK_FIXED (fixed1), checkbutton0, 80, 64);
@@ -269,84 +287,90 @@ GtkWidget* create_window2 (void){
 
   checkbutton17 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton17);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton17, 176, 344);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton17, 136, 344);
   gtk_widget_set_size_request (checkbutton17, 16, 16);
 
   checkbutton16 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton16);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton16, 176, 304);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton16, 136, 304);
   gtk_widget_set_size_request (checkbutton16, 24, 16);
 
   checkbutton15 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton15);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton15, 176, 264);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton15, 136, 264);
   gtk_widget_set_size_request (checkbutton15, 24, 16);
 
   checkbutton14 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton14);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton14, 176, 224);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton14, 136, 224);
   gtk_widget_set_size_request (checkbutton14, 24, 16);
+  
+  checkbutton13 = gtk_check_button_new_with_mnemonic ("");
+  gtk_widget_show (checkbutton13);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton13, 136, 184);
+  gtk_widget_set_size_request (checkbutton13, 16, 16);
 
   checkbutton12 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton12);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton12, 176, 144);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton12, 136, 144);
   gtk_widget_set_size_request (checkbutton12, 24, 16);
 
   checkbutton11 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton11);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton11, 176, 104);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton11, 136, 104);
   gtk_widget_set_size_request (checkbutton11, 24, 16);
 
   checkbutton10 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton10);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton10, 176, 64);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton10, 136, 64);
   gtk_widget_set_size_request (checkbutton10, 24, 16);
 
-  label25 = gtk_label_new (("DAC Value (mV) \n 0: negative unipolar"));
+  label25 = gtk_label_new (("DACval (mV) \n 0: neg"));
   gtk_widget_show (label25);
-  gtk_fixed_put (GTK_FIXED (fixed1), label25, 632, 24);
-  gtk_widget_set_size_request (label25, 212, 31);
+  gtk_fixed_put (GTK_FIXED (fixed1), label25, 290, 20);
+  gtk_widget_set_size_request (label25, 212, 34);
 
   checkbutton20 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton20);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton20, 536, 64);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton20, 280, 64);
   gtk_widget_set_size_request (checkbutton20, 24, 16);
+
+  checkbutton21 = gtk_check_button_new_with_mnemonic ("");
+  gtk_widget_show (checkbutton21);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton21, 280, 104);
+  gtk_widget_set_size_request (checkbutton21, 24, 16);
 
   checkbutton22 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton22);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton22, 536, 144);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton22, 280, 144);
   gtk_widget_set_size_request (checkbutton22, 24, 16);
 
   checkbutton23 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton23);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton23, 536, 184);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton23, 280, 184);
   gtk_widget_set_size_request (checkbutton23, 24, 16);
 
   checkbutton24 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton24);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton24, 536, 224);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton24, 280, 224);
   gtk_widget_set_size_request (checkbutton24, 24, 16);
 
   checkbutton25 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton25);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton25, 536, 264);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton25, 280, 264);
   gtk_widget_set_size_request (checkbutton25, 16, 16);
 
   checkbutton26 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton26);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton26, 536, 304);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton26, 280, 304);
   gtk_widget_set_size_request (checkbutton26, 24, 16);
 
   checkbutton27 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton27);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton27, 536, 344);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton27, 280, 344);
   gtk_widget_set_size_request (checkbutton27, 16, 16);
 
-  checkbutton21 = gtk_check_button_new_with_mnemonic ("");
-  gtk_widget_show (checkbutton21);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton21, 536, 104);
-  gtk_widget_set_size_request (checkbutton21, 24, 16);
-
+ 
   label26 = gtk_label_new (("Board configuration"));
   gtk_widget_show (label26);
   gtk_fixed_put (GTK_FIXED (fixed1), label26, 0, 392);
@@ -562,117 +586,137 @@ GtkWidget* create_window2 (void){
   gtk_fixed_put (GTK_FIXED (fixed1), label36, 624, 576);
   gtk_widget_set_size_request (label36, 184, 16);
 
-  hscale1 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1024, 1, 0, 0)));
-  gtk_widget_show (hscale1);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale1, 296, 96);
-  gtk_widget_set_size_request (hscale1, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale1), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale1), 0);
 
-  hscale2 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
-  gtk_widget_show (hscale2);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale2, 296, 136);
-  gtk_widget_set_size_request (hscale2, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale2), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale2), 0);
-
-  hscale3 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0,0,1024, 1, 0, 0)));
-  gtk_widget_show (hscale3);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale3, 296, 176);
-  gtk_widget_set_size_request (hscale3, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale3), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale3), 0);
-
-  hscale4 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 000,1024, 1, 0, 0)));
-  gtk_widget_show (hscale4);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale4, 296, 216);
-  gtk_widget_set_size_request (hscale4, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale4), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale4), 0);
-
-  hscale5 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 000, 1024, 1, 0, 0)));
-  gtk_widget_show (hscale5);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale5, 296, 256);
-  gtk_widget_set_size_request (hscale5, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale5), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale5), 0);
-
-  hscale6 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1024, 1, 0, 0)));
-  gtk_widget_show (hscale6);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale6, 296, 296);
-  gtk_widget_set_size_request (hscale6, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale6), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale6), 0);
-
-  hscale7 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1024, 1, 0, 0)));
+ 
+  hscale7 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale7), "0");
   gtk_widget_show (hscale7);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale7, 296, 336);
-  gtk_widget_set_size_request (hscale7, 152, 48);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale7, 196, 340);
+  gtk_widget_set_size_request (hscale7, 50, 25);
   gtk_scale_set_value_pos (GTK_SCALE (hscale7), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale7), 0);
 
-  hscale0 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  hscale6 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale6), "0");
+  gtk_widget_show (hscale6);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale6, 196, 300);
+  gtk_widget_set_size_request (hscale6, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale6), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale6), 0);
+  
+  hscale5 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale5), "0");
+  gtk_widget_show (hscale5);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale5, 196, 260);
+  gtk_widget_set_size_request (hscale5, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale5), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale5), 0);
+
+  hscale4 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale4), "0");
+  gtk_widget_show (hscale4);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale4, 196, 220);
+  gtk_widget_set_size_request (hscale4, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale4), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale4), 0);
+
+  hscale3 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale3), "0");
+  gtk_widget_show (hscale3);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale3, 196, 180);
+  gtk_widget_set_size_request (hscale3, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale3), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale3), 0);
+  
+  hscale2 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale2), "0");
+  gtk_widget_show (hscale2);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale2, 196, 140);
+  gtk_widget_set_size_request (hscale2, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale2), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale2), 0);
+
+  hscale1 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale1), "0");
+  gtk_widget_show (hscale1);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale1, 196, 100);
+  gtk_widget_set_size_request (hscale1, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale1), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale1), 0);
+  
+  hscale0 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale0), "0");
   gtk_widget_show (hscale0);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale0, 296, 56);
-  gtk_widget_set_size_request (hscale0, 152, 48);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale0, 196, 60);
+  gtk_widget_set_size_request (hscale0, 50, 25);
   gtk_scale_set_value_pos (GTK_SCALE (hscale0), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale0), 0);
 
-  hscale11 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 00, 1, 0, 0)));
-  gtk_widget_show (hscale11);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale11, 624, 96);
-  gtk_widget_set_size_request (hscale11, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale11), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale11), 0);
-
-  hscale17 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+ 
+  hscale17 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale17), "0");
   gtk_widget_show (hscale17);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale17, 624, 336);
-  gtk_widget_set_size_request (hscale17, 152, 48);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale17, 340, 340);
+  gtk_widget_set_size_request (hscale17, 50, 25);
   gtk_scale_set_value_pos (GTK_SCALE (hscale17), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale17), 0);
-
-  hscale16 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  
+  hscale16 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale16), "0");
   gtk_widget_show (hscale16);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale16, 624, 296);
-  gtk_widget_set_size_request (hscale16, 152, 48);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale16, 340, 300);
+  gtk_widget_set_size_request (hscale16, 50, 25);
   gtk_scale_set_value_pos (GTK_SCALE (hscale16), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale16), 0);
-
-  hscale12 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  
+  hscale15 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale15), "0");
+  gtk_widget_show (hscale15);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale15, 340, 260);
+  gtk_widget_set_size_request (hscale15, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale15), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale15), 0);
+  
+  hscale14 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale14), "0");
+  gtk_widget_show (hscale14);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale14, 340, 220);
+  gtk_widget_set_size_request (hscale14, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale14), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale14), 0);
+  
+  hscale13 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale13), "0");
+  gtk_widget_show (hscale13);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale13, 340, 180);
+  gtk_widget_set_size_request (hscale13, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale13), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale13), 0);
+  
+  hscale12 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale12), "0");
   gtk_widget_show (hscale12);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale12, 624, 136);
-  gtk_widget_set_size_request (hscale12, 152, 48);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale12, 340, 140);
+  gtk_widget_set_size_request (hscale12, 50, 25);
   gtk_scale_set_value_pos (GTK_SCALE (hscale12), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale12), 0);
 
-  hscale13 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
-  gtk_widget_show (hscale13);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale13, 624, 176);
-  gtk_widget_set_size_request (hscale13, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale13), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale13), 0);
+  hscale11 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale11), "0");
+  gtk_widget_show (hscale11);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale11, 340, 100);
+  gtk_widget_set_size_request (hscale11, 50, 25);
+  gtk_scale_set_value_pos (GTK_SCALE (hscale11), GTK_POS_BOTTOM);
+  gtk_scale_set_digits (GTK_SCALE (hscale11), 0);
 
-  hscale15 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
-  gtk_widget_show (hscale15);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale15, 624, 256);
-  gtk_widget_set_size_request (hscale15, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale15), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale15), 0);
-
-  hscale14 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
-  gtk_widget_show (hscale14);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale14, 624, 216);
-  gtk_widget_set_size_request (hscale14, 152, 48);
-  gtk_scale_set_value_pos (GTK_SCALE (hscale14), GTK_POS_BOTTOM);
-  gtk_scale_set_digits (GTK_SCALE (hscale14), 0);
-
-  hscale10 = gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, -2000, 000, 1, 0, 0)));
+  hscale10 = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+  gtk_entry_set_text(GTK_ENTRY(hscale10), "0");
   gtk_widget_show (hscale10);
-  gtk_fixed_put (GTK_FIXED (fixed1), hscale10, 624, 56);
-  gtk_widget_set_size_request (hscale10, 152, 48);
+  gtk_fixed_put (GTK_FIXED (fixed1), hscale10, 340, 60);
+  gtk_widget_set_size_request (hscale10, 50, 25);
   gtk_scale_set_value_pos (GTK_SCALE (hscale10), GTK_POS_BOTTOM);
   gtk_scale_set_digits (GTK_SCALE (hscale10), 0);
+
 
   button1 = gtk_button_new_from_stock ("gtk-apply");
   gtk_widget_show (button1);
@@ -700,49 +744,49 @@ GtkWidget* create_window2 (void){
   gtk_widget_set_size_request (hseparator1, 1008, 16);
 
 
- label37 = gtk_label_new (("AutoSet"));
+  label37 = gtk_label_new (("AutoSet"));
   gtk_widget_show (label37);
-  gtk_fixed_put (GTK_FIXED (fixed1), label37, 808, 24);
+  gtk_fixed_put (GTK_FIXED (fixed1), label37, 420, 30);
   gtk_widget_set_size_request (label37, 64, 24);
 
   checkbutton61 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton61);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton61, 808, 56);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton61, 420, 56);
   gtk_widget_set_size_request (checkbutton61, 119, 22);
 
   checkbutton62 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton62);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton62, 808, 96);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton62, 420, 96);
   gtk_widget_set_size_request (checkbutton62, 119, 22);
 
   checkbutton63 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton63);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton63, 808, 136);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton63, 420, 136);
   gtk_widget_set_size_request (checkbutton63, 119, 22);
 
   checkbutton64 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton64);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton64, 808, 176);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton64, 420, 176);
   gtk_widget_set_size_request (checkbutton64, 119, 22);
 
   checkbutton65 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton65);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton65, 808, 216);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton65, 420, 216);
   gtk_widget_set_size_request (checkbutton65, 119, 22);
 
   checkbutton66 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton66);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton66, 808, 256);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton66, 420, 256);
   gtk_widget_set_size_request (checkbutton66, 119, 22);
 
   checkbutton67 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton67);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton67, 808, 296);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton67, 420, 296);
   gtk_widget_set_size_request (checkbutton67, 119, 22);
 
   checkbutton68 = gtk_check_button_new_with_mnemonic ("");
   gtk_widget_show (checkbutton68);
-  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton68, 808, 336);
+  gtk_fixed_put (GTK_FIXED (fixed1), checkbutton68, 420, 336);
   gtk_widget_set_size_request (checkbutton68, 119, 22);
 
 
@@ -789,6 +833,102 @@ GtkWidget* create_window2 (void){
   gtk_radio_button_set_group (GTK_RADIO_BUTTON (radiobutton12), radiobutton11_group);
   radiobutton11_group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (radiobutton12));
 
+#ifdef V1725
+
+  label10B = gtk_label_new (("Enabled"));
+  gtk_widget_show (label10B);
+  gtk_fixed_put (GTK_FIXED (fixed1), label10B, 520, 32);
+  gtk_widget_set_size_request (label10B, 64, 32);
+
+  label11B = gtk_label_new (("Int Trg \nEnable"));
+  gtk_widget_show (label11B);
+  gtk_fixed_put (GTK_FIXED (fixed1), label11B, 540, 24);
+  gtk_widget_set_size_request (label11B, 168, 40);
+
+  label12B = gtk_label_new (("Int trg thr \n(mV)"));
+  gtk_widget_show (label12B);
+  gtk_fixed_put (GTK_FIXED (fixed1), label12B, 610, 20);
+  gtk_widget_set_size_request (label12B, 152, 40);
+ 
+  label13B = gtk_label_new (("Prop\ntrg ext."));
+  gtk_widget_show (label13B);
+  gtk_fixed_put (GTK_FIXED (fixed1), label13B, 690, 16);
+  gtk_widget_set_size_request (label13B, 96, 40);
+
+  label14B = gtk_label_new (("DACval (mV)\n 0:neg"));
+  gtk_widget_show (label14B);
+  gtk_fixed_put (GTK_FIXED (fixed1), label14B, 760, 16);
+  gtk_widget_set_size_request (label14B, 96, 40);
+
+  label15B = gtk_label_new (("AutoSet"));
+  gtk_widget_show (label15B);
+  gtk_fixed_put (GTK_FIXED (fixed1), label15B, 820, 20);
+  gtk_widget_set_size_request (label15B, 96, 40);
+  
+  labelB=new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+    std::ostringstream sst;
+    sst<<"Ch "<<(ii+8);
+    labelB[ii]=gtk_label_new((sst.str().c_str()));
+    gtk_widget_show(labelB[ii]);
+    gtk_fixed_put(GTK_FIXED(fixed1),labelB[ii],470,60+ii*40);
+    gtk_widget_set_size_request (labelB[ii], 64, 24);
+  }
+
+  checkbutton0B=new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+     checkbutton0B[ii]=gtk_check_button_new_with_mnemonic ("");
+     gtk_widget_show (checkbutton0B[ii]);
+     gtk_fixed_put (GTK_FIXED (fixed1), checkbutton0B[ii], 560, 64+ii*40);
+     gtk_widget_set_size_request (checkbutton0B[ii], 16, 16);
+  }
+
+  checkbutton1B=new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+     checkbutton1B[ii]=gtk_check_button_new_with_mnemonic ("");
+     gtk_widget_show (checkbutton1B[ii]);
+     gtk_fixed_put (GTK_FIXED (fixed1), checkbutton1B[ii], 600, 64+ii*40);
+     gtk_widget_set_size_request (checkbutton1B[ii], 16, 16);
+  }
+  hscale0B = new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+    hscale0B[ii] = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+    gtk_entry_set_text(GTK_ENTRY(hscale0B[ii]), "0");
+    gtk_widget_show (hscale0B[ii]);
+    gtk_fixed_put (GTK_FIXED (fixed1), hscale0B[ii], 640, 60+ii*40);
+    gtk_widget_set_size_request (hscale0B[ii], 50, 25);
+    gtk_scale_set_value_pos (GTK_SCALE (hscale0B[ii]), GTK_POS_BOTTOM);
+    gtk_scale_set_digits (GTK_SCALE (hscale0B[ii]), 0);
+  }
+
+  checkbutton2B = new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+    checkbutton2B[ii] = gtk_check_button_new_with_mnemonic ("");
+    gtk_widget_show (checkbutton2B[ii]);
+    gtk_fixed_put (GTK_FIXED (fixed1), checkbutton2B[ii], 720, 64+ii*40);
+    gtk_widget_set_size_request (checkbutton2B[ii], 24, 16);
+  }
+  
+  hscale1B = new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+    hscale1B[ii] = gtk_entry_new(); //gtk_hscale_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0,1024, 1, 0, 0)));
+    gtk_entry_set_text(GTK_ENTRY(hscale1B[ii]), "0");
+    gtk_widget_show (hscale1B[ii]);
+    gtk_fixed_put (GTK_FIXED (fixed1), hscale1B[ii], 770, 60+ii*40);
+    gtk_widget_set_size_request (hscale1B[ii], 50, 25);
+    gtk_scale_set_value_pos (GTK_SCALE (hscale1B[ii]), GTK_POS_BOTTOM);
+    gtk_scale_set_digits (GTK_SCALE (hscale1B[ii]), 0);
+  }
+  
+  checkbutton3B = new GtkWidget*[8];
+  for (int ii=0;ii<8;ii++){
+    checkbutton3B[ii] = gtk_check_button_new_with_mnemonic ("");
+    gtk_widget_show (checkbutton3B[ii]);
+    gtk_fixed_put (GTK_FIXED (fixed1), checkbutton3B[ii], 850, 64+ii*40);
+    gtk_widget_set_size_request (checkbutton3B[ii], 24, 16);
+  }
+  
+#endif
 
   /* Store pointers to all widgets, for use by lookup_widget(). */
   GLADE_HOOKUP_OBJECT_NO_REF (window2, window2, "window2");
@@ -910,6 +1050,35 @@ GtkWidget* create_window2 (void){
   GLADE_HOOKUP_OBJECT (window2, radiobutton11, "radiobutton11");
   GLADE_HOOKUP_OBJECT (window2, radiobutton12, "radiobutton12");
 
+  #ifdef V1725 
+  for (int ii=0;ii<8;ii++){
+    std::ostringstream sst0;
+    sst0<<"checkbutton0B_"<<ii;
+    GLADE_HOOKUP_OBJECT(window2,checkbutton0B[ii],sst0.str().c_str());
+
+    std::ostringstream sst1;
+    sst1<<"checkbutton1B_"<<ii;
+    GLADE_HOOKUP_OBJECT(window2,checkbutton0B[ii],sst1.str().c_str());
+
+    std::ostringstream sst2;
+    sst2<<"hscale0B_"<<ii;
+    GLADE_HOOKUP_OBJECT(window2,hscale0B[ii],sst2.str().c_str());
+
+    std::ostringstream sst3;
+    sst3<<"checkbutton2B_"<<ii;
+    GLADE_HOOKUP_OBJECT(window2,checkbutton2B[ii],sst3.str().c_str());
+
+    std::ostringstream sst4;
+    sst4<<"hscale1B_"<<ii;
+    GLADE_HOOKUP_OBJECT(window2,hscale1B[ii],sst4.str().c_str());
+    
+    std::ostringstream sst5;
+    sst5<<"checkbutton4B_"<<ii;
+    GLADE_HOOKUP_OBJECT(window2,checkbutton3B[ii],sst5.str().c_str());
+    
+
+  }
+  #endif
 
   /*Defaul values goes here */
 
