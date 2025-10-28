@@ -1120,6 +1120,9 @@ create_window1 (void)
   GtkWidget *button2;
   GtkWidget *button6;
 
+  GtkWidget *label0;
+  GtkWidget *checkbutton0;
+
   window1 = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (window1), ("V1720 Control"));
 
@@ -1127,32 +1130,42 @@ create_window1 (void)
   gtk_widget_show (fixed2);
   gtk_container_add (GTK_CONTAINER (window1), fixed2);
 
-  button4 = gtk_button_new_from_stock ("gtk-media-stop");
+  button4 = gtk_button_new_with_mnemonic ("StopRun");
   gtk_widget_show (button4);
-  gtk_fixed_put (GTK_FIXED (fixed2), button4, 176, 16);
-  gtk_widget_set_size_request (button4, 56, 32);
+  gtk_fixed_put (GTK_FIXED (fixed2), button4, 166, 16);
+  gtk_widget_set_size_request (button4, 68, 38);
 
-  button3 = gtk_button_new_from_stock ("gtk-media-play");
+  button3 = gtk_button_new_with_mnemonic ("StartRun");
   gtk_widget_show (button3);
-  gtk_fixed_put (GTK_FIXED (fixed2), button3, 112, 16);
-  gtk_widget_set_size_request (button3, 64, 32);
+  gtk_fixed_put (GTK_FIXED (fixed2), button3, 90, 16);
+  gtk_widget_set_size_request (button3, 72, 38);
 
-  button5 = gtk_button_new_from_stock ("gtk-quit");
+  button5 = gtk_button_new_with_mnemonic ("Quit");
   gtk_widget_show (button5);
-  gtk_fixed_put (GTK_FIXED (fixed2), button5, 248, 16);
-  gtk_widget_set_size_request (button5, 56, 32);
+  gtk_fixed_put (GTK_FIXED (fixed2), button5, 270, 16);
+  gtk_widget_set_size_request (button5, 58, 32);
 
   button2 = gtk_button_new_with_mnemonic (("Configure"));
   gtk_widget_show(button2);
-  gtk_fixed_put(GTK_FIXED (fixed2), button2, 24, 16);
+  gtk_fixed_put(GTK_FIXED (fixed2), button2, 6, 16);
   gtk_widget_set_size_request (button2, 80, 32);
  
 
-  button6 = gtk_button_new_with_mnemonic (("Softw Trigg"));
+  button6 = gtk_button_new_with_mnemonic (("Sw Trg"));
   gtk_widget_show(button6);
   gtk_fixed_put(GTK_FIXED (fixed2), button6, 320, 16);
-  gtk_widget_set_size_request (button6, 80, 32);
+  gtk_widget_set_size_request (button6, 60, 32);
+  gtk_widget_set_sensitive(button6,0);
 
+  checkbutton0 = gtk_check_button_new_with_mnemonic ("");
+  gtk_widget_show (checkbutton0);
+  gtk_fixed_put (GTK_FIXED (fixed2), checkbutton0, 240, 24);
+  gtk_widget_set_size_request (checkbutton0, 16, 16);
+
+  label0 = gtk_label_new (("DryRun"));
+  gtk_widget_show (label0);
+  gtk_fixed_put (GTK_FIXED (fixed2), label0, 236, 2);
+  gtk_widget_set_size_request(label0, 50, 16);
 
   /* Store pointers to all widgets, for use by lookup_widget(). */
   GLADE_HOOKUP_OBJECT_NO_REF (window1, window1, "window1");
@@ -1162,6 +1175,7 @@ create_window1 (void)
   GLADE_HOOKUP_OBJECT (window1, button5, "button5");
   GLADE_HOOKUP_OBJECT (window1, button2, "button2");
   GLADE_HOOKUP_OBJECT (window1, button6, "button6");
+  GLADE_HOOKUP_OBJECT (window1, checkbutton0, "checkbutton0");
 
 
   return window1;

@@ -126,6 +126,7 @@ typedef struct{
 /* structure to hold informations for the board */
 struct V1720_board{
   int start_stop ; //the status of acquisition. Start(1) or Stop(0).
+  int dry_run;  /*Is this a dryRun? If 1, it is. Do not save*/
   int handle; /* the int used to handle comm with VME */
   V1720_channel ch[16]; /*info for the channels */
   

@@ -2,6 +2,7 @@
 #include <gdk/gdkkeysyms.h>
 #include "callback.h"
 #include "interface.h"
+#include "struct_event.h"
 #include "support.h"
 #include "v1720.h"
 #include <math.h>
@@ -27,16 +28,28 @@ void on_button6_clicked(GtkButton *button, gpointer user_data) {
 
 /*START BUTTON*/
 void on_button3_clicked(GtkButton *button, gpointer user_data) {
+
+  
+  	TFile **file;
+	TTree **tree;
+	button_data *data;
+	V1720_board *bd;
+	data = (button_data *) user_data;
+	file = data->file; //pointer to pointer
+	tree = data->tree; //pointer to pointer
+	event *this_event=data->this_event;
+	bd = data->bd;
+
+
 	/*Disable START again*/
 	gtk_widget_set_sensitive((GtkWidget*) button, 0);
-	GtkWidget *stop_button;
+	GtkWidget *stop_button,*dry_run;
 
 	/*Disable CONFIGURE */
 	stop_button = lookup_widget((GtkWidget*) button, "button2");
 	gtk_widget_set_sensitive(stop_button, 0);
 
 	/*Enable STOP */
-
 	stop_button = lookup_widget((GtkWidget*) button, "button4");
 	gtk_widget_set_sensitive(stop_button, 1);
 
@@ -48,15 +61,67 @@ void on_button3_clicked(GtkButton *button, gpointer user_data) {
 	stop_button = lookup_widget((GtkWidget*) button, "button6");
 	gtk_widget_set_sensitive(stop_button, 1);
 
+	/*Check dry run*/
+	dry_run = lookup_widget((GtkWidget*) button, "checkbutton0");
+	if (GTK_TOGGLE_BUTTON(dry_run)->active) {
+		printf("DRY RUN enabled\n");
+		bd->dry_run = 1;
+
+	} else {
+		printf("Normal run\n");
+		printf("Create TTree, save data\n");
+		
+
+		char OutputTime[20];
+		char fname[50];
+		time_t aclock;
+		struct tm *newtime;
+		aclock = time(NULL);
+		newtime = localtime(&aclock);
+		strftime(OutputTime, sizeof(OutputTime), "%Y%m%d%H%M%S", newtime);
+		
+		strcpy(fname, "root/data");
+		strcat(fname, OutputTime);
+		strcat(fname, ".root");
+		
+		time_t now;
+		time(&now);
+		printf("Starting at %s", ctime(&now));
+		
+	        *file = new TFile(fname, "recreate");
+		*tree = new TTree("out", "out");
+
+		//out_tree->Branch("FADC","std::vector < std::vector < int > >",&this_event.fadc);
+		
+		(*tree)->Branch("event",this_event);
+		
+	        (*this_event).trig_time = 0;
+		(*this_event).num = 0;
+
+		bd->dry_run = 0;
+	}
 	g_print("START ACQUISITION \n");
-	V1720_board *bd;
-	bd = (V1720_board *) user_data;
 	v1720StartStopAcquisition(bd->handle, 1);
+	
+	
 	bd->start_stop = 1;
 }
 
 /*Stop BUTTON*/
 void on_button4_clicked(GtkButton *button, gpointer user_data) {
+
+  	TFile **file;
+	TTree **tree;
+	button_data *data;
+	V1720_board *bd;
+	data = (button_data *) user_data;
+	file = data->file; //pointer to pointer
+	tree = data->tree; //pointer to pointer
+	bd = data->bd;
+
+	TTree *treeP=(*tree); //pointer
+	TFile *fileP=(*file); //pointer
+
 
 	/*Disable STOP again*/
 	gtk_widget_set_sensitive((GtkWidget*) button, 0);
@@ -78,10 +143,17 @@ void on_button4_clicked(GtkButton *button, gpointer user_data) {
 	gtk_widget_set_sensitive(start_button, 1);
 
 	g_print("STOP ACQUISITION \n");
-	V1720_board *bd;
-	bd = (V1720_board *) user_data;
 	v1720StartStopAcquisition(bd->handle, 0);
 	v1720Clear(bd->handle);
+
+	sleep(1);
+	if (treeP){
+	  treeP->Write();
+	  fileP->Write();
+	  fileP->Close();
+	  *tree=0;          //reset pointer
+	  *file=0;          //reset pointer
+	}
 	bd->start_stop = 0;
 }
 
@@ -90,28 +162,27 @@ void on_button4_clicked(GtkButton *button, gpointer user_data) {
 void on_button5_clicked(GtkButton *button, gpointer user_data)
 
 {
-	ofstream *file_txt1;
-	TFile *file1;
-	TTree *tree1;
-	uint32_t **write_buf;
-	uint32_t **read_buf;
-	button5_data *data;
+
+	TFile **file;
+	TTree **tree;
+	button_data *data;
 	V1720_board *bd;
-	data = (button5_data *) user_data;
-	file1 = data->file;
-	tree1 = data->tree;
+	data = (button_data *) user_data;
+	file = data->file; //pointer to pointer
+	tree = data->tree; //pointer to pointer
 	bd = data->bd;
-	file_txt1 = data->file_txt;
-	write_buf = data->write_buf;
-	read_buf = data->read_buf;
-	printf("Now close CAEN comm: %i\n",bd->handle);
 
-	printf("Now wait until all data is copied.\n");
-	sleep(10);
+	TTree *treeP=(*tree); //pointer
+	TFile *fileP=(*file); //pointer
+	
 
-	tree1->Write();
-	file1->Write();
-	file_txt1->close();
+	if (treeP!=0){       //pointer is set
+	  treeP->Write();
+	  fileP->Write();
+	  fileP->Close();
+	  *tree=0;          //reset pointer
+	  *file=0;          //reset pointer
+	}
 
 
 	printf("Saving and quit now \n");

@@ -351,8 +351,9 @@ int v1720GenerateSoftwareTrigger(int handle) {
 int v1720SetTriggerEnableMask(int handle, int sw_trig, int ext_trig, int coinc_level, int chan_mask) {
 	unsigned int mask;
 
-	if (sw_trig < 0 || sw_trig > 1 || ext_trig < 0 || ext_trig > 1 || coinc_level < 0 || coinc_level > 7 || chan_mask < 0 || chan_mask > 0xFF) {
+	if (sw_trig < 0 || sw_trig > 1 || ext_trig < 0 || ext_trig > 1 || coinc_level < 0 || coinc_level > 7 || chan_mask < 0 || chan_mask > 0xFFFF) {
 		printf("v1720SetTriggerEnableMask ERROR: bad parameter(s)\n");
+		printf("%i %i %i %i\n",sw_trig,ext_trig,coinc_level,chan_mask);
 		return ERROR;
 	}
 
