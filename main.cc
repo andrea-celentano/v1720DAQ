@@ -29,6 +29,8 @@ extern "C" {
 #include <stdlib.h>
 #include <time.h>
 
+//#define DEBUG 2
+
 #define BUF_LENGTH 41000000
 #define MAX_LENGTH 4100
 #define FADC_HEADER 0xA //1010->MSB of the Header of the Board.
@@ -79,14 +81,23 @@ int this_samples = 0;
 /* The function to decode events and write them to disk/root file/whatever it is.. */
 /*At the beginning of the function,*write_buf point to the first word to be written or analized */
 void decode_event(int event_size) {
-
+#ifdef DEBUG
+  printf("decode_event called, size: %i [zs: %i]\n",event_size,bd.zs_mode);
+#endif 
 	int fadc_data1, fadc_data2;
+	int offset;
 	int ichannel, isample, thechannel, prev_ichannel;
 	int temp_channel_mask;
 	int ii = 0;
 	int jj = 0;
 	int ctrl;
 	int isize, isize2, ipulse, itime;
+
+#ifdef V1725
+	offset=0x3FFF;
+#else
+	offset=0xFFF;
+#endif
 
 	for (ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
 		this_event.nPEAKS[ii] = 0;
@@ -98,15 +109,23 @@ void decode_event(int event_size) {
 
 	*write_buf = 0x0;
 	write_buf++; //ignore first word,
-	this_event.channel_mask = (*write_buf) & 0xFF;
-	this_event.active_channels = ((this_event.channel_mask >> 7) & 0x1) + ((this_event.channel_mask >> 6) & 0x1) + ((this_event.channel_mask >> 5) & 0x1) + ((this_event.channel_mask >> 4) & 0x1) + ((this_event.channel_mask >> 3) & 0x1) + ((this_event.channel_mask >> 2) & 0x1) + ((this_event.channel_mask >> 1) & 0x1)
-			+ ((this_event.channel_mask) & 0x1);
+
+	this_event.channel_mask = (*write_buf) & 0xFF; //second word
+	*write_buf = 0x0;
+	write_buf++;
+
+	this_event.num = *(write_buf)&0xFFFFFF;
+#ifdef V1725
+	this_event.channel_mask = this_event.channel_mask | (((*(write_buf)>>24)&0xFF)<<8);
+#endif
+	this_event.active_channels = 0;
+	for (int qq=0;qq<FADC_CHANNELS_PER_BOARD;qq++){
+	  this_event.active_channels += (this_event.channel_mask >> qq) &0x1;
+	}
 
 	*write_buf = 0x0;
 	write_buf++;
-	this_event.num = *(write_buf);
-	*write_buf = 0x0;
-	write_buf++;
+
 	this_event.trig_time = (*write_buf) & 0x7FFFFFFF; //MSB is overflow
 	*write_buf = 0x0;
 	write_buf++;
@@ -123,55 +142,73 @@ void decode_event(int event_size) {
 
 		printf("Setting up FADC ANALIZER\n");
 		MyFadc->Setup(this_samples / 5);
+		printf("Done setting up FADC ANALIZER\n");
 	}
 
 	thechannel = 0;
 	ichannel = 0;
 	temp_channel_mask = this_event.channel_mask;
 
+
+
+
 	if (bd.zs_mode == 0) {
-		for (int ii = 0; ii < event_size; ii++) {
-			prev_ichannel = ichannel;
-			ichannel = (2 * ii) / (this_event.samples_per_channel);
-			isample = (2 * ii) % (this_event.samples_per_channel);
+	  //A.C. work-around recompute samples
+	  this_event.samples_per_channel=(2*event_size)/this_event.active_channels;
+	  ii=0;
+	  ichannel=0;
+	  while (ii < event_size){ //counter on event
 
-			if ((ichannel != 0) && (ichannel != prev_ichannel)) {
+	    //loop on active channels
+	    for (int ich=0;ich<this_event.active_channels;ich++){
+	      //determine the ID of the current channel
+#ifdef DEBUG
+	      printf("decode_event start ch %i/%i %x\n",ich,this_event.active_channels,temp_channel_mask);
+#endif
+	      while ((temp_channel_mask&0x1) == 0){
+		temp_channel_mask=(temp_channel_mask>>1)&0xFFFF;
+		ichannel++;
+	      }
+	     
 
-				this_event.nPEAKS[thechannel] = 1;
-				this_event.nFADC[thechannel][0] = this_event.samples_per_channel;
+	      //loop over the samples
+	      for (int qq=0;qq<this_event.samples_per_channel/2;qq++){ //samples_per_channel is even
+		fadc_data1 = (*write_buf) & 0x3FFF;         //A.C. set to 0x3FFF on 27/10
+		fadc_data2 = ((*write_buf) >> 16) & 0x3FFF; //A.C. set to 0x3FFF on 27/10
+		*write_buf = 0x0;
+		write_buf++;
+		ii++;
+		//fadc_data1 = -offset + fadc_data1; //THESE ARE bits, not mV
+		//fadc_data2 = -offset + fadc_data2; //THESE ARE bits, not mV
+		
+		this_event.fadc[ichannel][0][2*qq] = fadc_data1;
+		this_event.fadc[ichannel][0][2*qq + 1] = fadc_data2;
+#ifdef DEBUG
+		printf("%i %i %i: %x %x\n",ii,ichannel,qq,fadc_data1,fadc_data2);
+#endif
+	      }
+	      //data of channel "ichannel" read
+	      this_event.nPEAKS[ichannel] = 1;
+	      this_event.nFADC[ichannel][0] = this_event.samples_per_channel;
+	      
+	      MyFadc->LoadEvent(this_event.fadc[ichannel][0], this_event.nFADC[ichannel][0]);
+	      MyFadc->ProcessEvent();
+	      
+	      this_event.ped_mean[ichannel] = MyFadc->GetPedMean();
+	      this_event.ped_sigma[ichannel] = MyFadc->GetPedSigma();
+	      
+	      this_event.peaks[ichannel][0].peak_start = MyFadc->GetPeakStart();
+	      this_event.peaks[ichannel][0].peak_end = MyFadc->GetPeakEnd();
+	      this_event.peaks[ichannel][0].peak_val = MyFadc->GetPeakValue();
+	      this_event.peaks[ichannel][0].peak_position = MyFadc->GetPeakPosition();
+	      this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
+	      this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
 
-				MyFadc->LoadEvent(this_event.fadc[thechannel][0], this_event.nFADC[thechannel][0]);
-				MyFadc->ProcessEvent();
-
-				this_event.ped_mean[thechannel] = MyFadc->GetPedMean();
-				this_event.ped_sigma[thechannel] = MyFadc->GetPedSigma();
-
-				this_event.peaks[thechannel][0].peak_start = MyFadc->GetPeakStart();
-				this_event.peaks[thechannel][0].peak_end = MyFadc->GetPeakEnd();
-				this_event.peaks[thechannel][0].peak_position = MyFadc->GetPeakPosition();
-				this_event.peaks[thechannel][0].time = MyFadc->GetTime(0);
-				this_event.peaks[thechannel][0].energy = MyFadc->GetEnergy(0);
-
-				temp_channel_mask = temp_channel_mask >> 1;
-				thechannel++;
-			}
-
-			while ((temp_channel_mask & 0x01) != 1) {
-				temp_channel_mask = temp_channel_mask >> 1;
-				thechannel++;
-			}
-
-			fadc_data1 = (*write_buf) & 0xFFF;
-			fadc_data2 = ((*write_buf) >> 16) & 0xFFF;
-			*write_buf = 0x0;
-			write_buf++;
-			fadc_data1 = -0xFFF + fadc_data1; //THESE ARE bits, not mV
-			fadc_data2 = -0xFFF + fadc_data2; //THESE ARE bits, not mV
-
-			this_event.fadc[thechannel][0][isample] = fadc_data1;
-			this_event.fadc[thechannel][0][isample + 1] = fadc_data2;
-		}
-
+	      temp_channel_mask=temp_channel_mask>>1;
+	      ichannel++;
+	     
+	    }
+	  }
 	} else {
 		ii = 0;
 		isample = 0;
@@ -209,8 +246,8 @@ void decode_event(int event_size) {
 						write_buf++;
 						ii++;
 						jj++;
-						fadc_data1 = -(pow(2,Nbit)-1) + fadc_data1; //THESE ARE bits, not mV
-						fadc_data2 = -(pow(2,Nbit)-1) + fadc_data2; //THESE ARE bits, not mV
+						fadc_data1 = -offset + fadc_data1; //THESE ARE bits, not mV
+						fadc_data2 = -offset + fadc_data2; //THESE ARE bits, not mV
 						this_event.fadc[thechannel][ipulse][isample++] = fadc_data1;
 						this_event.fadc[thechannel][ipulse][isample++] = fadc_data2;
 					}
@@ -236,6 +273,9 @@ void decode_event(int event_size) {
 
 	out_tree->Fill();
 	if (this_event.num % 10000 == 0) out_tree->AutoSave("SaveSelf");
+#ifdef DEBUG
+	printf("event decoded");
+#endif
 }
 
 /*Function for gui thread: this handles gtk! */
@@ -257,6 +297,7 @@ void * gui_fun(void *arg) {
 
 	/*quit*/
 	button5_data data_temp_button5;
+	data_temp_button5.bd = &bd;
 	data_temp_button5.file = out_file;
 	data_temp_button5.tree = out_tree;
 	data_temp_button5.file_txt = &(file_txt);
@@ -436,9 +477,13 @@ void * rate_fun(void *arg) {
 
 	float diff_rate, int_rate;
 
-	TCanvas *c_waveforms = new TCanvas("Waveforms", "Waveforms", 800, 800);
-	c_waveforms->Divide(3, 3);
-
+	TCanvas *c_waveforms1 = new TCanvas("Waveforms1", "Waveforms ch0-7", 1200, 800);
+	c_waveforms1->Divide(3, 3);
+	TCanvas *c_waveforms2 = 0;
+#ifdef V1725
+	c_waveforms2=new TCanvas("Waveforms2", "Waveforms ch8-15", 1200, 800);
+	c_waveforms2->Divide(3, 3);
+#endif
 	TGraph **waveforms = new TGraph*[FADC_CHANNELS_PER_BOARD];
 	for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
 		waveforms[ii] = new TGraph();
@@ -460,11 +505,14 @@ void * rate_fun(void *arg) {
 	gint_rate->SetMarkerStyle(7);
 	gint_rate->SetMarkerColor(2);
 
-	TMultiGraph *grate = NULL;
+	//	TMultiGraph *grate = NULL;
 
 	int rate_counter = 0;
 	const int n_rate_points = 500;
-
+	double LSB=0.4884;
+#ifdef V1725
+	LSB=0.1221;
+#endif
 	while (1) {
 		if (bd.start_stop == 1) {
 			if (rate_counter == 0) OriginalTime = get_time();
@@ -488,13 +536,21 @@ void * rate_fun(void *arg) {
 					diff_rate = (float) nevents_diff * 1000.0f / (float) ElapsedTime;
 					for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
 
+					
 						//Draw current waveform
-						waveforms[ii]->Clear();
+						waveforms[ii]->Clear();				   
 						if ((this_event.channel_mask >> ii) & 0x1 == 1) {
 							for (int jj = 0; jj < this_event.nFADC[ii][0]; jj++) {
-								waveforms[ii]->SetPoint(jj, jj * 4, this_event.fadc[ii][0][jj] * 0.4884);	//THESE ARE mV
+								waveforms[ii]->SetPoint(jj, jj * 4, this_event.fadc[ii][0][jj] * LSB);	//THESE ARE mV
 							}
-							c_waveforms->cd(ii + 1);
+							if (ii<8){
+							  c_waveforms1->cd(ii + 1);
+							}
+#ifdef V1725
+							else{
+							  c_waveforms2->cd(ii-8+1);
+							}
+#endif
 							waveforms[ii]->Draw("ALP");
 						}
 
@@ -513,7 +569,7 @@ void * rate_fun(void *arg) {
 				gdiff_rate->SetPoint(rate_counter, rate_counter * 5, diff_rate);
 				gint_rate->SetPoint(rate_counter, rate_counter * 5, int_rate);
 				rate_counter++;
-				c_waveforms->cd(9);
+				c_waveforms1->cd(9);
 				gint_rate->Draw("AP");
 				gdiff_rate->Draw("PSAME");
 
@@ -522,8 +578,12 @@ void * rate_fun(void *arg) {
 				}
 				gint_rate->GetYaxis()->SetRangeUser(0, int_rate * 2);
 				//else grate->GetXaxis()->SetRangeUser(0,n_rate_points*5);
-				c_waveforms->Modified();
-				c_waveforms->Update();
+				c_waveforms1->Modified();
+				c_waveforms1->Update();
+#ifdef V1725
+				c_waveforms2->Modified();
+				c_waveforms2->Update();
+#endif
 				PrevRateTime = CurrentTime;
 				pthread_mutex_unlock(&tree_mutex);
 			} //end if elapsed time
@@ -550,7 +610,7 @@ int main(int argc, char **argv) {
 	newtime = localtime(&aclock);
 	strftime(OutputTime, sizeof(OutputTime), "%Y%m%d%H%M%S", newtime);
 
-	strcpy(fname, "data");
+	strcpy(fname, "root/data");
 	strcat(fname, OutputTime);
 	strcat(fname, ".root");
 
@@ -562,12 +622,7 @@ int main(int argc, char **argv) {
 	out_tree = new TTree("out", "out");
 
 //out_tree->Branch("FADC","std::vector < std::vector < int > >",&this_event.fadc);
-	out_tree->Branch("FADC", &this_event.fadc);
 
-	out_tree->Branch("PED_MEAN", &this_event.ped_mean);
-	out_tree->Branch("PED_SIGMA", &this_event.ped_sigma);
-
-	out_tree->Branch("PEAKS", this_event.peaks);
 
 	out_tree->Branch("TRIG_TIME", &this_event.trig_time);
 	out_tree->Branch("NUM", &this_event.num);
@@ -575,6 +630,9 @@ int main(int argc, char **argv) {
 	out_tree->Branch("SAMPLE_PER_CHANNEL", &this_event.samples_per_channel);
 	out_tree->Branch("CHANNEL_MASK", &this_event.channel_mask);
 	out_tree->Branch("ACTIVE_CHANNELS", &this_event.active_channels);
+
+
+	out_tree->Branch("EVENT", &this_event);
 
 	this_event.trig_time = 0;
 	this_event.num = 0;
@@ -585,7 +643,7 @@ int main(int argc, char **argv) {
 	bd.handle = -1;
 	bd.start_stop = 0;
 
-	/*Setup FADC analizer*/
+
 	MyFadc = new fadc_analizer(); //constructor only wants the number of channels
 	MyFadc->Setup(10); //Setup is then done in the function for decoding
 	MyFadc->PrintEnergyMethods();
@@ -611,6 +669,9 @@ int main(int argc, char **argv) {
 	pthread_join(GUI_tr, NULL);
 	pthread_join(READ_tr, NULL);
 	pthread_join(WRITE_tr, NULL);
+
+
+	v1720Close(bd.handle);
 
 	return 1;
 }

@@ -8,12 +8,12 @@ double function(unsigned short *fadc,double *par).
 
 fadc --> array of fadc data (for 1 channel!) in "bits", not in mV
 par --> some parameters already calculated. 
-       0 ped mean in mV
-       1 ped sigma in mV
-       2 peak val in mV (positive, pedestal subtracted!)
-       3 peak position in SAMPLES
-       4 integration start in SAMPLES
-       5 integration end in SAMPLES
+       0 ped mean in samples
+       1 ped sigma in samples
+       2 peak val in samples (positive, pedestal subtracted);
+       3 peak position in samples
+       4 integration start in samples
+       5 integration end in samples
        6 number of total samples (integer)
 */
 
@@ -62,11 +62,12 @@ double GetTimeFADC250Firmware(unsigned short *fadc, double *par){
   for (int ii=peak_pos;ii>0;ii--){
 
     
-
-    if (((fadc[ii]*(fadc_analizer::LSB))>vmean)&&((fadc[ii+1]*(fadc_analizer::LSB))<vmean)){
+    //A.C. TO FIX
+    double LSB=0.4884;
+    if (((fadc[ii]*(LSB))>vmean)&&((fadc[ii+1]*(LSB))<vmean)){
       tcoarse=(double)ii;
-      vbp=(double)fadc[ii]*fadc_analizer::LSB;
-      vap=(double)fadc[ii+1]*fadc_analizer::LSB;
+      vbp=(double)fadc[ii]*LSB;
+      vap=(double)fadc[ii+1]*LSB;
       break;      
     }
   }

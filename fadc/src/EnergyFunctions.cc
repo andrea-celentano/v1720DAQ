@@ -8,13 +8,13 @@ double function(unsigned short *fadc,double *par).
 
 fadc --> array of fadc data (for 1 channel!) in "bits", NOT in mV
 par --> some parameters already calculated. 
-       0 ped mean in mV
-       1 ped sigma in mV
-       2 peak val in mV
-       3 peak position in SAMPLES
-       4 integration start in SAMPLES
-       5 integration end in SAMPLES
-       6 number of SAMPLES
+       0 ped mean in samples
+       1 ped sigma in samples
+       2 peak val in samples
+       3 peak position in samples
+       4 integration start in samples
+       5 integration end in samples
+       6 number of samples
 */
 
 
@@ -37,9 +37,7 @@ double GetEnergySumv2(unsigned short *fadc, double *par){
       energy_tot+=(double)fadc[ii];
       nintegrated++;
      }  
-    energy_tot=energy_tot*fadc_analizer::LSB; //convert to mV
     energy_tot=-energy_tot+(ped_mean)*(nintegrated);  
-    energy_tot=energy_tot*fadc_analizer::dT/fadc_analizer::R;
   }
   else {
     energy_tot=-5000;
@@ -73,8 +71,6 @@ double GetEnergySum(unsigned short *fadc, double *par){
     nintegrated++;  
 }
  
-  energy_tot=energy_tot*fadc_analizer::LSB;
   energy_tot=-energy_tot+(ped_mean)*(nintegrated);
-  energy_tot=energy_tot*fadc_analizer::dT/fadc_analizer::R;
   return energy_tot;
 }

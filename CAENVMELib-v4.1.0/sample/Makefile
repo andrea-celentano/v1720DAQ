@@ -10,12 +10,12 @@ all: default
 OBJECTS = CAENVMEDemoMain.o CAENVMEDemoVme.o console.o CaenVmeVSL.o
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -I../include -L. -c $< -o $@
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+	$(CC) $(OBJECTS) $(LDFLAGS) -I../include -L. -o $@
 
 clean:
 	-rm -f *.o

@@ -96,18 +96,23 @@ void on_button5_clicked(GtkButton *button, gpointer user_data)
 	uint32_t **write_buf;
 	uint32_t **read_buf;
 	button5_data *data;
+	V1720_board *bd;
 	data = (button5_data *) user_data;
 	file1 = data->file;
 	tree1 = data->tree;
+	bd = data->bd;
 	file_txt1 = data->file_txt;
 	write_buf = data->write_buf;
 	read_buf = data->read_buf;
+	printf("Now close CAEN comm: %i\n",bd->handle);
+
 	printf("Now wait until all data is copied.\n");
 	sleep(10);
 
 	tree1->Write();
 	file1->Write();
 	file_txt1->close();
+
 
 	printf("Saving and quit now \n");
 	gtk_main_quit();
@@ -155,7 +160,7 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 	char name[100];
 	char buffer[100];
 	double val, val1, val2;
-	double DACoffset[NCH];
+	int DACoffset[NCH];
 	int coinc_level;
 
 
@@ -190,12 +195,18 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 	val = gtk_range_get_value(GTK_RANGE(widget));
 	int samples_per_channel;
 	samples_per_channel = (int) val;
-
+#ifdef V1725
+	if ((samples_per_channel % 10) !=0) samples_per_channel=(samples_per_channel/10+1)*10;
+#else
 	if ((samples_per_channel % 2) == 1) samples_per_channel++;
 	if ((samples_per_channel % 4) == 2) samples_per_channel++;
-
+#endif
 	printf("Number of samples per events per channel %i \n", samples_per_channel);
+#ifdef V1725
+	samples_per_channel = samples_per_channel /10;
+#else
 	samples_per_channel = samples_per_channel / 4; /*UNTIL explained, one must divide per 4 number of samples per ch and not per 2 as reported in the manual*/
+#endif
 #ifdef DEBUG
 	printf("Number of memory location per events per channel %i \n",samples_per_channel);
 #endif
@@ -343,7 +354,7 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 	}
 
 	/*single ch configuration */
-	for (ii = 0; ii < NCH; ii++) {
+	for (ii = 0; ii < 8; ii++) {
 		sprintf(name, "checkbutton%i", ii);
 		widget = lookup_widget(window, name);
 		if (GTK_TOGGLE_BUTTON(widget)->active) {
@@ -378,24 +389,18 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
-		DACoffset[ii] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
-		val = -(DACoffset[ii]) * (pow(2., 16.) - 1) / 2000;
-		int dacdac;
-		dacdac = (int) val;
-
-		printf("Channel %i, offset (mV): %f ----> %i , %x \n", ii, DACoffset[ii], dacdac, dacdac);
-
-		bd->ch[ii].dac = dacdac;
+		DACoffset[ii] = atoi(gtk_entry_get_text(GTK_ENTRY(widget)));
+		printf("Channel %i, offset: %i \n", ii, DACoffset[ii]);
+		bd->ch[ii].dac = DACoffset[ii];
 		
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
 		val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 
-		dacdac = (int) val1;
-
-		printf("Channel %i, ZLE thr: %i (0x%x) \n", ii, val1, dacdac);
-
-		bd->ch[ii].zle_thr = dacdac;
+	
+		
+		//	printf("Channel %i, ZLE thr: %i (0x%x) \n", ii, val1, dacdac);
+		bd->ch[ii].zle_thr = 0;
 
 		//trig n over thr. Now is common to all channels
 		widget = lookup_widget(window, "hscale35");
@@ -407,65 +412,62 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 	}
 	/*single ch configuration v1725 */
 #ifdef V1725
-	for (ii = 0; ii < NCH; ii++) {
+	for (ii = 0; ii < 8; ii++) {
 	  sprintf(name, "checkbutton0B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  if (GTK_TOGGLE_BUTTON(widget)->active) {
-	    printf("Chanell %i enabled\n", ii);
-	    bd->ch[ii].enabled = 1;
+	    printf("Chanell %i enabled\n", ii+8);
+	    bd->ch[ii+8].enabled = 1;
 	    
 	  } else {
-	    printf("Channel %i disabled\n", ii);
-	    bd->ch[ii].enabled = 0;
+	    printf("Channel %i disabled\n", ii+8);
+	    bd->ch[ii+8].enabled = 0;
 	  }
+
 	  sprintf(name, "checkbutton1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  if (GTK_TOGGLE_BUTTON(widget)->active) {
-	    printf("Chanell %i trigger enabled\n", ii);
-	    bd->ch[ii].trig_enabled = 1;
+	    printf("Chanell %i trigger enabled\n", ii+8);
+	    bd->ch[ii+8].trig_enabled = 1;
 	    
 	  } else {
-	    printf("Channel %i trigger disabled\n", ii);
-	    bd->ch[ii].trig_enabled = 0;
+	    printf("Channel %i trigger disabled\n", ii+8);
+	    bd->ch[ii+8].trig_enabled = 0;
 	  }
 
 	  sprintf(name, "checkbutton2B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  if (GTK_TOGGLE_BUTTON(widget)->active) {
-	    printf("Chanell %i propagate trigger enabled\n", ii);
-	    bd->ch[ii].trig_out_enabled = 1;
+	    printf("Chanell %i propagate trigger enabled\n", ii+8);
+	    bd->ch[ii+8].trig_out_enabled = 1;
 	    
 	  } else {
-	    printf("Channel %i propagate trigger disabled\n", ii);
-	    bd->ch[ii].trig_out_enabled = 0;
+	    printf("Channel %i propagate trigger disabled\n", ii+8);
+	    bd->ch[ii+8].trig_out_enabled = 0;
 	  }
-	  
-	  sprintf(name, "hscale0B_%i", ii);
-	  widget = lookup_widget(window, name);
-	  DACoffset[ii] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
-	  val = -(DACoffset[ii]) * (pow(2., 16.) - 1) / 2000;
-	  int dacdac;
-	  dacdac = (int) val;
-	  
-	  printf("Channel %i, offset (mV): %f ----> %i , %x \n", ii, DACoffset[ii], dacdac, dacdac);
-	  bd->ch[ii].dac = dacdac;
 	  
 	  sprintf(name, "hscale1B_%i", ii);
 	  widget = lookup_widget(window, name);
+	  DACoffset[ii+8] = atoi(gtk_entry_get_text(GTK_ENTRY(widget)));
+	  printf("Channel %i, offset:  %i \n", ii+8, DACoffset[ii+8]);
+	  bd->ch[ii+8].dac =  DACoffset[ii+8];
+	  
+	  sprintf(name, "hscale0B_%i", ii);
+	  widget = lookup_widget(window, name);
 	  val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 	  
-	  dacdac = (int) val1;
+	  // dacdac = (int) val1;
 	  
-	  printf("Channel %i, ZLE thr: %i (0x%x) \n", ii, val1, dacdac);
+	  // printf("Channel %i, ZLE thr: %i (0x%x) \n", ii+8, val1, dacdac);
 	  
-	  bd->ch[ii].zle_thr = dacdac;
+	  bd->ch[ii+8].zle_thr = 0;
 	  
 	  //trig n over thr. Now is common to all channels
 	  widget = lookup_widget(window, "hscale35");
 	  val = gtk_range_get_value(GTK_RANGE(widget));
 	  int n_samples_thr = (int) val;
 	  printf("Number n of samples over thr is %i \n", n_samples_thr * 4);
-	  bd->ch[ii].trig_n_over_thr = n_samples_thr;
+	  bd->ch[ii+8].trig_n_over_thr = n_samples_thr;
 
 	}
 #endif
@@ -480,7 +482,7 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 
 	v1720Init(bd);
 	/* Now Auto DC Offset */
-	for (int ii = 0; ii < NCH; ii++) {
+	for (int ii = 0; ii < 8; ii++) {
 		int flag = 0;
 		int ret;
 		sprintf(name, "checkbutton%i", ii + 61);
@@ -499,10 +501,37 @@ void configure_enable_callback(GtkWidget *window, gpointer data) {
 			DACoffset[ii] = (int) (-ret * 2000 / (pow(2., 16.) - 1));
 
 			//val=-(DACoffset[ii])*(pow(2.,16.)-1)/2000;
-			gtk_range_set_value(GTK_RANGE(widget), DACoffset[ii]);
+			sprintf(buffer, "%.2f",DACoffset[ii]);
+			gtk_entry_set_text(GTK_ENTRY(widget),buffer);
 
 		}
 	}
+#ifdef V1725
+	for (int ii = 0; ii < 8; ii++) {
+		int flag = 0;
+		int ret;
+		sprintf(name, "checkbutton3B_%i", ii);
+		widget = lookup_widget(window, name);
+		if (GTK_TOGGLE_BUTTON(widget)->active) {
+			flag = 1;
+		}
+		printf("flag is %i\n", flag);
+		if ((bd->ch[ii+8].enabled == 1) && (flag)) {
+			printf("Auto set ch %i \n", ii);
+			ret = v1720AutoSetDCOffset(bd->handle, ii, -DACoffset[ii+8], &bd->ch[ii+8].baseline);
+			bd->ch[ii+8].dac = ret;
+
+			sprintf(name, "hscale%i", ii + 10);
+			widget = lookup_widget(window, name);
+			DACoffset[ii] = (int) (-ret * 2000 / (pow(2., 16.) - 1));
+
+			//val=-(DACoffset[ii])*(pow(2.,16.)-1)/2000;
+			sprintf(buffer, "%.2f",DACoffset[ii+8]);
+			gtk_entry_set_text(GTK_ENTRY(widget),buffer);
+
+		}
+	}
+#endif
 
 	/*Now get MEAN*/
 	for (int ii = 0; ii < NCH; ii++) {
@@ -790,12 +819,12 @@ void configure_save_callback(GtkWidget *window, gpointer data) {
 	    file << "0 ";
 	  }
 		
-	  sprintf(name, "hscale0B_%i", ii);
+	  sprintf(name, "hscale1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  DACoffset[ii+8] = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
-	  file << DACoffset[ii] << " ";
+	  file << DACoffset[ii+8] << " ";
 
-	  sprintf(name, "hscale1B_%i", ii);
+	  sprintf(name, "hscale0B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  val1 = atof(gtk_entry_get_text(GTK_ENTRY(widget)));
 	  file << val1 << " ";
@@ -1070,16 +1099,16 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 
 		sprintf(name, "hscale%i", ii + 10);
 		widget = lookup_widget(window, name);
-		file >> tmpF;
-		snprintf(buffer, sizeof(buffer), "%.2f",tmpF);
-		printf("load_callback, dac ch %i: %f\n",ii,tmpF);
+		file >> tmp;
+		snprintf(buffer, sizeof(buffer), "%i",tmp);
+		printf("load_callback, dac ch %i: %f\n",ii,tmp);
 		gtk_entry_set_text(GTK_ENTRY(widget),buffer);
 
 		sprintf(name, "hscale%i", ii + 0);
 		widget = lookup_widget(window, name);
-		file >> tmpF;
-		snprintf(buffer, sizeof(buffer), "%.2f",tmpF);
-		printf("load_callback, ZLE ch %i: %f\n",ii,tmpF);
+		file >> tmp;
+		snprintf(buffer, sizeof(buffer), "%i",tmp);
+		printf("load_callback, ZLE ch %i: %f\n",ii,tmp);
 		gtk_entry_set_text(GTK_ENTRY(widget),buffer);
 		file.ignore();
 	}
@@ -1111,19 +1140,19 @@ void configure_load_callback(GtkWidget *window, gpointer data) {
 	  else
 	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), 0);
 	  
-	  sprintf(name, "hscale0B_%i", ii);
-	  widget = lookup_widget(window, name);
-	  file >> tmp;
-	  snprintf(buffer, sizeof(buffer), "%.2f",tmp);
-	  gtk_entry_set_text(GTK_ENTRY(widget),buffer);
-	  
 	  sprintf(name, "hscale1B_%i", ii);
 	  widget = lookup_widget(window, name);
 	  file >> tmp;
-	  snprintf(buffer, sizeof(buffer), "%.2f",tmp);
+	  snprintf(buffer, sizeof(buffer), "%i",tmp);
+	  gtk_entry_set_text(GTK_ENTRY(widget),buffer);
+	  
+	  sprintf(name, "hscale0B_%i", ii);
+	  widget = lookup_widget(window, name);
+	  file >> tmp;
+	  snprintf(buffer, sizeof(buffer), "%i",tmp);
 	  gtk_entry_set_text(GTK_ENTRY(widget), buffer);
 
-	  printf("%i %i aa \n", ii, tmp);
+	 
 	  file.ignore();
 	}
 #endif

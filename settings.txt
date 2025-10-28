@@ -1,0 +1,60 @@
+Acquisition mode
+0
+Samples per channel 
+150
+BLT Event number 
+2
+TRIGGER
+Coincidence level 
+0
+Count all triggers
+0
+Internal trig polarity is negative:
+1
+Enable ext trigger: 
+1
+Enable software trigger: 
+1
+Enable ext trigger out propagation: 
+0
+Enable soft trigger out propagation: 
+0
+Ext signals polarity is NIM:
+1
+Post trigger setting: 
+0
+Samples over thr for trigger: 
+0
+CHANNELS:
+Ch 0 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 1 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 2 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 3 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 4 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 5 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 6 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 7 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 8 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 9 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 10 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 11 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 12 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 13 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 14 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 
+Ch 15 (Enabled? Trigger Enabled? - Propagate Trigger? - DAC Offset - ZLE Threshold)
+1 0 0 2000 0 

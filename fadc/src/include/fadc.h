@@ -106,17 +106,7 @@ private:
   vector<energy_calculator*> m_energy_calculators; //the vector we need to use for the energy calculators (just the pointers!)
   vector<time_calculator*> m_time_calculators; //the vector we need to use for the time calculators
 public:
-  /* Some global "constants" */
-  /* You never touch them (12 bit digitizer 250MHz clock) */
-
-  static constexpr double LSB=0.4884;
-  static constexpr double R=50;
-  static constexpr double dT=4;
-
-
-
-
-
+ 
   fadc_analizer();
   ~fadc_analizer();
   void Setup(int PedWidth=60);
@@ -135,12 +125,12 @@ public:
 
 
   //here are the functions to get back what we (commonly used variables);
-  double GetPedMean(); //in mV
-  double GetPedSigma(); //in mV
-  double GetPeakPosition(); //in ns
-  double GetPeakValue(); //in mV
-  double GetPeakStart(); //in ns
-  double GetPeakEnd(); //in ns
+  double GetPedMean(); //in samples
+  double GetPedSigma(); //in samples
+  double GetPeakPosition(); //in samples
+  double GetPeakValue(); //in samples
+  double GetPeakStart(); //in samples
+  double GetPeakEnd(); //in samples
 
   //The same as above, but as c vector (for all channels)
   

@@ -1,7 +1,5 @@
 #include <stdio.h>
-extern "C" {
-#include "CAENComm.h"
-}
+
 #include "v1720.h"
 #include <string.h>
 #include <pthread.h>
@@ -17,7 +15,10 @@ int v1720Init(V1720_board *bd) { /*we need just a pointer to the V1720_board str
 	int res;
 	res = 0;
 	if (bd->handle == -1) {
-		res = CAENComm_OpenDevice(CAENComm_OpticalLink, 0, 0, 0, &(bd->handle));
+	  uint32_t LinkNum=25183;
+	  int ConetNum=0;
+	  uint32_t VMEaddress=0x0000;
+	  res = CAENComm_OpenDevice2(CAENComm_USB_A4818,&LinkNum,ConetNum, VMEaddress, &(bd->handle));
 	}
 	if (res != 0) {
 		char err_code[50];
@@ -182,6 +183,7 @@ int v1720SetChannelNdataOverUnderThreshold(int handle, int ch, int ndata) {
 int v1720SetChannelDACOffset(int handle, int ch, int DACoffset) {
 	unsigned int mask;
 	unsigned int ret;
+	int tests=10;
 	ret = 0;
 	int offset;
 	offset = ch * (0x0100);
@@ -192,12 +194,23 @@ int v1720SetChannelDACOffset(int handle, int ch, int DACoffset) {
 
 	mask = DACoffset;
 	LOCK_1720;
+	while(tests){
+	  CAENComm_Read32(handle, V1720status + offset, &ret);
+	  if ( (ret&V1720_CH_DAC_BUSY) == 0){
+	    break;
+	  }
+	  usleep(100000);
+	  tests--;
+	}
+	if (tests==0){
+	  printf("v1720SetChannelDACOffset error at beginning\n");
+	}
 	CAENComm_Write32(handle, V1720dac_offset + offset, mask);
 	CAENComm_Read32(handle, V1720status + offset, &ret);
 	UNLOCK_1720;
 	ret = ret & V1720_CH_DAC_BUSY;
 	/*need to check status bit 2 ???*//*Seems yes, otherwise only 1 channel every 2 is configured */
-	while (ret == V1720_CH_DAC_BUSY) {
+	while (ret!=0) {
 		LOCK_1720;
 		CAENComm_Read32(handle, V1720status + offset, &ret);
 		UNLOCK_1720;
@@ -211,7 +224,7 @@ int v1720SetChannelDACOffset(int handle, int ch, int DACoffset) {
 		printf("I wrote in %#x the DAQ offset %i for ch %i \n", V1720dac_offset + offset, mask, ch);
 		return 1;
 	} else {
-		printf("Error while writing in %#x the DAQ offset for ch %i. Board is %i, trying to wrote %i \n", V1720dac_offset + offset, ch, ret, mask);
+		printf("Error while writing in %#x the DAQ offset for ch %i. Board is %x, trying to wrote %x \n", V1720dac_offset + offset, ch, ret, mask);
 		return 0;
 	}
 }
@@ -411,7 +424,11 @@ int v1720SetFrontPanelIOControl(int handle, int data) {
 }
 
 int v1720SetChannelEnableMask(int handle, int mask) {
-	if (mask < 0 || mask > 0xFF) {
+  int max=0xFF;
+#ifdef V1725
+  max=0xFFFF;
+#endif
+        if (mask < 0 || mask > max) {
 		printf("v1720SetChannelEnableMask ERROR: bad parameter(s)\n");
 		return ERROR;
 	}
@@ -793,11 +810,18 @@ int v1720AutoSetDCOffset(int handle, int ch, double baseline_goal, int *ret_base
 	uint32_t *buff_point;
 	int n_words;
 	int mean_sum;
+	int constant;
 	double mean;
 	int DC_OFFSET;
 	int flag; /*flag=1: first step, going down. flag=0: second step, going up.*/
 
 	uint32_t bd_config;
+
+#ifdef V1725
+	constant=0x3FFF;
+#else
+	constant=0xFFF;
+#endif
 
 	DC_OFFSET = AUTO_DC_OFFSET_START;
 
@@ -862,11 +886,11 @@ int v1720AutoSetDCOffset(int handle, int ch, double baseline_goal, int *ret_base
 			n_words = n_words - 4; //This is the number of words containing data
 			mean_sum = 0;
 			for (jj = 0; jj < n_words; jj++) {
-				mean_sum = mean_sum + ((*buff_point) & 0xFFF) + (((*buff_point) >> 16) & 0xFFF);
+				mean_sum = mean_sum + ((*buff_point) & constant) + (((*buff_point) >> 16) & constant);
 				buff_point++;
 			}
 			mean = (double) mean_sum / (n_words * 2);
-			mean = -mVmax + mean / 4095 * mVmax;
+			mean = -mVmax + mean / constant * mVmax;
 
 			if (flag == 1) {
 				if ((-mean) <= baseline_goal) {
@@ -905,3 +929,10 @@ int v1720AutoSetDCOffset(int handle, int ch, double baseline_goal, int *ret_base
 	return DC_OFFSET;
 }
 
+int v1720Close(int handle){
+  if (handle!=-1){
+    printf("v1720Close is called with handle:%i\n",handle);
+    CAENComm_CloseDevice(handle);
+    return 0;
+  }
+}

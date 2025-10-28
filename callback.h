@@ -2,6 +2,9 @@
 #include <TFile.h>
 #include <TTree.h>
 
+
+class V1720_board;
+
 /*Struct to pass data to on_button2_clicked */
 typedef struct{
   GtkWidget *window1T;
@@ -15,6 +18,7 @@ typedef struct{
   std::ofstream *file_txt;
   uint32_t **read_buf; 
   uint32_t **write_buf;
+  V1720_board *bd;
 }button5_data;
 
 
