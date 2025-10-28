@@ -25,7 +25,7 @@ class fadc_analizer
   public: 
     //first creator, no cal. constants
     energy_calculator(fadc_analizer& o_fadc,const std::string& name,const std::string& description);
-    int SetFunction(double (*fun)(int *points,double *par)); //return is error code
+    int SetFunction(double (*fun)(unsigned short *points,double *par)); //return is error code
     double CalculateEnergy();
     
 
@@ -51,7 +51,7 @@ class fadc_analizer
   public: 
     //first creator, no cal. constants
     time_calculator(fadc_analizer& o_fadc,const std::string& name,const std::string& description);
-    int SetFunction(double (*fun)(int *points,double *par)); //return is error code
+    int SetFunction(double (*fun)(unsigned short *points,double *par)); //return is error code
     double CalculateTime();
  
     
@@ -106,17 +106,7 @@ private:
   vector<energy_calculator*> m_energy_calculators; //the vector we need to use for the energy calculators (just the pointers!)
   vector<time_calculator*> m_time_calculators; //the vector we need to use for the time calculators
 public:
-  /* Some global "constants" */
-  /* You never touch them (12 bit digitizer 250MHz clock) */
-
-  static const double LSB=0.4884;
-  static const double R=50;
-  static const double dT=4;
-
-
-
-
-
+ 
   fadc_analizer();
   ~fadc_analizer();
   void Setup(int PedWidth=60);
@@ -135,12 +125,12 @@ public:
 
 
   //here are the functions to get back what we (commonly used variables);
-  double GetPedMean(); //in mV
-  double GetPedSigma(); //in mV
-  double GetPeakPosition(); //in ns
-  double GetPeakValue(); //in mV
-  double GetPeakStart(); //in ns
-  double GetPeakEnd(); //in ns
+  double GetPedMean(); //in samples
+  double GetPedSigma(); //in samples
+  double GetPeakPosition(); //in samples
+  double GetPeakValue(); //in samples
+  double GetPeakStart(); //in samples
+  double GetPeakEnd(); //in samples
 
   //The same as above, but as c vector (for all channels)
   

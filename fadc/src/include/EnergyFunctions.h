@@ -4,16 +4,16 @@
 
 
 //for GetEnergySumv2. THESE are in samples
-#define START_ENERGY_V2 100 /*A. Celentano 12/12/2013. Lets took out here the peak position cut.*/
-#define WIDTH_ENERGY_V2 175
+#define START_ENERGY_V2 40 
+#define WIDTH_ENERGY_V2 40
 #define MIN_WIDTH 5 /*In samples */
 
 //GetEnergySum
 #define PRE_SAMPLES 5
 #define POST_SAMPLES 10
 
-double GetEnergySumv2(int *fadc,double *par);
-double GetEnergySum(int *fadc,double *par);
+double GetEnergySumv2(unsigned short *fadc,double *par);
+double GetEnergySum(unsigned short *fadc,double *par);
 
 
 #endif

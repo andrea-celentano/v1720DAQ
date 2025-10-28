@@ -1,10 +1,21 @@
 #include <gtk/gtk.h>
+extern "C" {
+#include "CAENComm.h"
+}
 
 /* single channel registers map */
 /* You should sum to this values 0x0n00, with n:0...7 */
-#define NCH 8
-#define Nbit 12
-#define mVmax 2000
+#define V1725
+
+#ifdef V1725
+  #define NCH    16     // V1725 has 16 channels
+  #define Nbit   14     // V1725 has 14-bit ADC
+  #define mVmax  2000   // Example: different voltage range
+#else
+  #define NCH    8      // Default (e.g., V1720)
+  #define Nbit   12
+  #define mVmax  2000
+#endif
 
 #define V1720zs_thres  0x1024       
 #define V1720zs_nsamp 0x1028     
@@ -82,7 +93,7 @@
 #define V1720_START_STOP 0x04 /*third bit */
 
 /*channel status register */
-#define V1720_CH_DAC_BUSY 0x04 /*third bit*/
+#define V1720_CH_DAC_BUSY 0x04 /*bit[2]*/
 
 
 /*Error and OK*/
@@ -113,10 +124,10 @@ typedef struct{
 }V1720_channel;
 
 /* structure to hold informations for the board */
-typedef struct {
+struct V1720_board{
   int start_stop ; //the status of acquisition. Start(1) or Stop(0).
   int handle; /* the int used to handle comm with VME */
-  V1720_channel ch[8]; /*info for the channels */
+  V1720_channel ch[16]; /*info for the channels */
   
   /* Channel configuration*/
   int trig_overlap_enable;
@@ -163,8 +174,7 @@ typedef struct {
   /*BLT*/
   int blt_event_number;
   int increased_blt_range; /*Undocumented feature */
-
-}V1720_board;
+};
 
 
 
@@ -219,6 +229,8 @@ int v1720SetChannelZSThreshold(int handle,int ch,int logic,int threshold);
 int v1720Reset(int handle);
 int v1720Clear(int handle);
 int v1720Init(V1720_board *bd);
+
+int v1720Close(int handle);
 
 int v1720StartStopAcquisition(int handle,int flag); /*0: stop. 1:start */
 

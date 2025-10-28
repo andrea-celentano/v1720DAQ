@@ -16,15 +16,15 @@ fadc_analizer::energy_calculator::energy_calculator(fadc_analizer& o_fadc, const
 
 /*This is very important: its the initialization of the function pointer for the energy calculator.
  Parameters are the following (BY DEFINITION, YOU CAN'T CHANGE THEM):
- 0 -> ped mean in mV
- 1 -> ped sigma in mV
- 2 -> peak val in mV
- 3 -> peak position in SAMPLES (NOT ns)
- 4 -> integration start in SAMPLES (NOT ns)
- 5 -> integration end in SAMPLES (NOT ns)
+ 0 -> ped mean in samples
+ 1 -> ped sigma in samples
+ 2 -> peak val in samples
+ 3 -> peak position in SAMPLES 
+ 4 -> integration start in SAMPLES 
+ 5 -> integration end in SAMPLES 
  6 -> samples per channel
  */
-int fadc_analizer::energy_calculator::SetFunction(double (*fun)(int *points, double *par)) {
+int fadc_analizer::energy_calculator::SetFunction(double (*fun)(unsigned short *points, double *par)) {
 	m_function = fun;
 	return 0;
 }
@@ -35,9 +35,9 @@ double fadc_analizer::energy_calculator::CalculateEnergy() {
 	par[0] = m_fadc.m_ped_mean;
 	par[1] = m_fadc.m_ped_sigma;
 	par[2] = m_fadc.m_peak_val;
-	par[3] = m_fadc.m_peak_pos / m_fadc.dT;
-	par[4] = m_fadc.m_peak_start / m_fadc.dT;
-	par[5] = m_fadc.m_peak_end / m_fadc.dT;
+	par[3] = m_fadc.m_peak_pos;
+	par[4] = m_fadc.m_peak_start;
+	par[5] = m_fadc.m_peak_end;
 	par[6] = m_fadc.m_SamplesPerChannel;
 
 	energy = m_function(m_fadc.points, par);
@@ -60,7 +60,7 @@ fadc_analizer::time_calculator::time_calculator(fadc_analizer& o_fadc, const std
  5 -> integration end in SAMPLES (NOT ns)
  6 -> Number of samples
  */
-int fadc_analizer::time_calculator::SetFunction(double (*fun)(int *points, double *par)) {
+int fadc_analizer::time_calculator::SetFunction(double (*fun)(unsigned short *points, double *par)) {
 	m_function = fun;
 	return 0;
 }
@@ -71,12 +71,12 @@ double fadc_analizer::time_calculator::CalculateTime() {
 	par[0] = m_fadc.m_ped_mean;
 	par[1] = m_fadc.m_ped_sigma;
 	par[2] = m_fadc.m_peak_val;
-	par[3] = m_fadc.m_peak_pos / m_fadc.dT;
-	par[4] = m_fadc.m_peak_start / m_fadc.dT;
-	par[5] = m_fadc.m_peak_end / m_fadc.dT;
+	par[3] = m_fadc.m_peak_pos;
+	par[4] = m_fadc.m_peak_start;
+	par[5] = m_fadc.m_peak_end;
 	par[6] = m_fadc.m_SamplesPerChannel;
 
-	time = m_function(m_fadc.points[0], par);
+	time = m_function(m_fadc.points, par);
 	delete par;
 	return time;
 }
@@ -151,7 +151,7 @@ int fadc_analizer::LoadEvent(unsigned short *samples, unsigned int N) {
 int fadc_analizer::ProcessEvent() {
 	int ret = 0;
 
-	ret += CalculatePedestal;
+	ret += CalculatePedestal();
 	ret += CalculatePeak();
 	ret += CalculatePeakLimits();
 
@@ -175,8 +175,8 @@ int fadc_analizer::CalculatePedestal() {
 		m_ped_mean += points[ii];
 		m_ped_sigma += ((points[ii]) * (points[ii]));
 	}
-	m_ped_mean = LSB * m_ped_mean / m_ped_width; //OK
-	m_ped_sigma = LSB * LSB * m_ped_sigma / m_ped_width; //this is the mean square value!
+	m_ped_mean =  m_ped_mean / m_ped_width; //OK
+	m_ped_sigma = m_ped_sigma / m_ped_width; //this is the mean square value!
 
 	m_ped_sigma = sqrt(m_ped_sigma - m_ped_mean * m_ped_mean);
 
@@ -184,23 +184,22 @@ int fadc_analizer::CalculatePedestal() {
 }
 ;
 
-/*Function used to calculate the peak position in ns and the peak value in mV
- IN: the channel to calculate
+/*Function used to calculate the peak position in ns and the peak value in samples
  OUT: the status of the calculation (0: ok, -1 error)
  */
 int fadc_analizer::CalculatePeak() {
 	if (m_setup_done != 0) return -1;
 
-	m_peak_val = (int) ((-3 * m_ped_sigma + m_ped_mean) / fadc_analizer::LSB);
+	m_peak_val = (int) ((-3 * m_ped_sigma + m_ped_mean));
 	m_peak_pos = 0;
 
 	for (int ii = 0; ii < m_SamplesPerChannel; ii++) {
 		if (points[ii] <= m_peak_val) {
 			m_peak_val = points[ii];
-			/*if(min<(-sigma_pedest)+mean_pedest)*/m_peak_pos = ii * dT;
+			/*if(min<(-sigma_pedest)+mean_pedest)*/m_peak_pos = ii*1.;
 		}
 	}
-	m_peak_val = m_peak_val * LSB - m_ped_mean;
+	m_peak_val = m_peak_val  - m_ped_mean;
 	m_peak_val = m_peak_val * (-1); //since signals are negative!
 	return 0;
 }
@@ -218,18 +217,18 @@ int fadc_analizer::CalculatePeakLimits() {
 		m_peak_end = 4;
 		return -3;
 	}
-	//1: init them at the peak position IN SAMPLES (so I divide by dT)
-	m_peak_start = (int) (m_peak_pos / dT);
-	m_peak_end = (int) (m_peak_pos / dT);
+	//1: init them at the peak position in samples
+	m_peak_start = (int) (m_peak_pos);
+	m_peak_end = (int) (m_peak_pos);
 
 	//2: the calculation: move start back until we reach the pedestal mean
 	do {
 		m_peak_start--;
-	} while (points[(int) m_peak_start] < m_ped_mean / fadc_analizer::LSB);
+	} while (points[(int) m_peak_start] < m_ped_mean);
 	//3: the calculatino: move end forward until we reach the pedestal mean
 	do {
 		m_peak_end++;
-	} while (points[(int) m_peak_end] < m_ped_mean / fadc_analizer::LSB);
+	} while (points[(int) m_peak_end] < m_ped_mean);
 
 	//4: a correction
 	m_peak_start++;
@@ -239,8 +238,6 @@ int fadc_analizer::CalculatePeakLimits() {
 	if (m_peak_start < 0) m_peak_start = 0;
 	if (m_peak_end >= m_SamplesPerChannel) m_peak_end = m_SamplesPerChannel - 1;
 
-	m_peak_start *= dT;
-	m_peak_end *= dT;
 
 	return 0;
 
