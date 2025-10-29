@@ -178,12 +178,7 @@ void setup_energy_monitor(TFile *file) {
 		TH1D *h = new TH1D(name.str().c_str(), title.str().c_str(), nb, xmin, xmax);
 		g_h_energy.push_back(h);
 	}
-	// delete old total histogram (if any)
-    if (g_h_etot) {
-        if (g_h_etot->GetDirectory()) g_h_etot->SetDirectory(nullptr);
-        delete g_h_etot;
-        g_h_etot = nullptr;
-    }
+
     // create new total histogram
     g_h_etot = new TH1D("h_energy_total", "Total energy;Energy (arb);Counts", g_total_nbins, g_total_xmin, g_total_xmax);
 }
@@ -314,8 +309,9 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	      this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
 	      {
 		double e = this_event.peaks[ichannel][0].energy;
+		double evis;
 		if ((int)g_h_energy.size() > ichannel) {
-		  double evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
+		  evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
 		  if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
 		}
 		_etot_event += (std::isfinite(evis) ? evis : 0.0);
@@ -382,8 +378,9 @@ void decode_event(int event_size,uint32_t *write_buf) {
 					this_event.peaks[thechannel][ipulse].energy = MyFadc->GetEnergy(0);
 					{
 						double e = this_event.peaks[thechannel][ipulse].energy;
+						double evis;
 						if ((int)g_h_energy.size() > thechannel) {
-							double evis = e * ( (thechannel < (int)g_ch_calib.size()) ? g_ch_calib[thechannel] : 1.0 );
+							evis = e * ( (thechannel < (int)g_ch_calib.size()) ? g_ch_calib[thechannel] : 1.0 );
 							if (g_h_energy[thechannel]) g_h_energy[thechannel]->Fill(evis);
 						}
 						_etot_event += (std::isfinite(evis) ? evis : 0.0);
