@@ -28,6 +28,9 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <vector>
+#include <sstream>
+#include <cmath>
 
 //#define DEBUG 2
 
@@ -79,6 +82,104 @@ int is_first = 1;
 int prev_samples = 0;
 int this_samples = 0;
 
+// --- Energy monitor globals (visualization only) ---
+std::vector<TH1D*> g_h_energy;
+TH1D *g_h_etot = nullptr;
+std::vector<int> g_ch_nbins;
+std::vector<double> g_ch_xmin;
+std::vector<double> g_ch_xmax;
+std::vector<double> g_ch_calib;
+int g_total_nbins = 100;
+double g_total_xmin = 0.0;
+double g_total_xmax = 1000.0;
+double g_total_calib = 1.0;
+
+/* Create and configure energy-monitor histograms and attach them to `file` (if provided).
+   This function is exposed to C callbacks via prototype in callback.h */
+void setup_energy_monitor(TFile *file) {
+	// defaults
+	int default_nbins = 100;
+	double default_xmin = 0.0;
+	double default_xmax = 1000.0;
+	double default_calib = 1.0;
+
+	int nch = FADC_CHANNELS_PER_BOARD;
+	g_ch_nbins.assign(nch, default_nbins);
+	g_ch_xmin.assign(nch, default_xmin);
+	g_ch_xmax.assign(nch, default_xmax);
+	g_ch_calib.assign(nch, default_calib);
+
+	// try to read configuration file (optional)
+	std::string cfg_path = "energy_monitor.cfg";
+	std::ifstream cfg(cfg_path.c_str());
+	if (cfg) {
+		std::string line;
+		while (std::getline(cfg, line)) {
+			std::string s = line;
+			// skip comments
+			if (s.find('#') == 0) continue;
+			size_t hashpos = s.find('#');
+			if (hashpos != std::string::npos) s = s.substr(0, hashpos);
+			// trim
+			auto ltrim = [](std::string &st){ size_t p = st.find_first_not_of(" \t\r\n"); if (p!=std::string::npos) st=st.substr(p); else st.clear(); };
+			auto rtrim = [](std::string &st){ size_t p = st.find_last_not_of(" \t\r\n"); if (p!=std::string::npos) st=st.substr(0,p+1); else st.clear(); };
+			ltrim(s); rtrim(s);
+			if (s.empty()) continue;
+			size_t eq = s.find('=');
+			if (eq==std::string::npos) continue;
+			std::string key = s.substr(0,eq);
+			std::string val = s.substr(eq+1);
+			ltrim(key); rtrim(key); ltrim(val); rtrim(val);
+
+			if (key=="nbins") default_nbins = std::stoi(val);
+			else if (key=="xmin") default_xmin = std::stod(val);
+			else if (key=="xmax") default_xmax = std::stod(val);
+			else if (key=="calib") default_calib = std::stod(val);
+			else if (key.rfind("ch",0)==0) {
+				size_t dot = key.find('.');
+				if (dot==std::string::npos) continue;
+				std::string chs = key.substr(2,dot-2);
+				int idx = std::stoi(chs);
+				if (idx<0 || idx>=nch) continue;
+				std::string param = key.substr(dot+1);
+				if (param=="nbins") g_ch_nbins[idx] = std::stoi(val);
+				else if (param=="xmin") g_ch_xmin[idx] = std::stod(val);
+				else if (param=="xmax") g_ch_xmax[idx] = std::stod(val);
+				else if (param=="calib") g_ch_calib[idx] = std::stod(val);
+			}
+			else if (key.rfind("total.",0)==0) {
+				std::string param = key.substr(6);
+				if (param=="nbins") g_total_nbins = std::stoi(val);
+				else if (param=="xmin") g_total_xmin = std::stod(val);
+				else if (param=="xmax") g_total_xmax = std::stod(val);
+				else if (param=="calib") g_total_calib = std::stod(val);
+			}
+		}
+		// apply global defaults where not overridden
+		for (int i=0;i<nch;i++){
+			if (g_ch_nbins[i]==default_nbins) g_ch_nbins[i]=default_nbins;
+			if (g_ch_xmin[i]==default_xmin) g_ch_xmin[i]=default_xmin;
+			if (g_ch_xmax[i]==default_xmax) g_ch_xmax[i]=default_xmax;
+			if (g_ch_calib[i]==default_calib) g_ch_calib[i]=default_calib;
+		}
+	}
+
+	// create histograms (attach to file if provided)
+	if (file) file->cd();
+	g_h_energy.clear();
+	for (int ch=0; ch<nch; ++ch) {
+		std::ostringstream name, title;
+		name << "h_energy_ch" << ch;
+		title << "Energy ch" << ch << ";Energy (arb);Counts";
+		int nb = g_ch_nbins[ch];
+		double xmin = g_ch_xmin[ch];
+		double xmax = g_ch_xmax[ch];
+		TH1D *h = new TH1D(name.str().c_str(), title.str().c_str(), nb, xmin, xmax);
+		g_h_energy.push_back(h);
+	}
+	g_h_etot = new TH1D("h_energy_total","Total energy;Energy (arb);Counts", g_total_nbins, g_total_xmin, g_total_xmax);
+}
+
 /* The function to decode events and write them to disk/root file/whatever it is.. */
 /*At the beginning of the function,*write_buf point to the first word to be written or analized */
 void decode_event(int event_size,uint32_t *write_buf) {
@@ -93,6 +194,7 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	int jj = 0;
 	int ctrl;
 	int isize, isize2, ipulse, itime;
+	double _etot_event = 0.0; // accumulate total energy for this event (raw units)
 
 #ifdef V1725
 	offset=0x3FFF;
@@ -202,8 +304,16 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	      this_event.peaks[ichannel][0].peak_end = MyFadc->GetPeakEnd();
 	      this_event.peaks[ichannel][0].peak_val = MyFadc->GetPeakValue();
 	      this_event.peaks[ichannel][0].peak_position = MyFadc->GetPeakPosition();
-	      this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
-	      this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
+				this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
+				this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
+				{
+					double e = this_event.peaks[ichannel][0].energy;
+					if ((int)g_h_energy.size() > ichannel) {
+						double evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
+						if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
+					}
+					_etot_event += (std::isfinite(e) ? e : 0.0);
+				}
 
 	      temp_channel_mask=temp_channel_mask>>1;
 	      ichannel++;
@@ -264,6 +374,14 @@ void decode_event(int event_size,uint32_t *write_buf) {
 					this_event.peaks[thechannel][ipulse].peak_position = MyFadc->GetPeakPosition();
 					this_event.peaks[thechannel][ipulse].time = MyFadc->GetTime(0) + this_event.peakStartTime[thechannel][ipulse];
 					this_event.peaks[thechannel][ipulse].energy = MyFadc->GetEnergy(0);
+					{
+						double e = this_event.peaks[thechannel][ipulse].energy;
+						if ((int)g_h_energy.size() > thechannel) {
+							double evis = e * ( (thechannel < (int)g_ch_calib.size()) ? g_ch_calib[thechannel] : 1.0 );
+							if (g_h_energy[thechannel]) g_h_energy[thechannel]->Fill(evis);
+						}
+						_etot_event += (std::isfinite(e) ? e : 0.0);
+					}
 					ipulse++;
 					itime += isize2;
 
@@ -271,10 +389,16 @@ void decode_event(int event_size,uint32_t *write_buf) {
 			}
 		}
 	}
-	if (out_tree){
-	  out_tree->Fill();
-	  if (this_event.num % 10000 == 0) out_tree->AutoSave("SaveSelf");
-	}
+		// Fill total-energy histogram (visualization)
+		if (g_h_etot) {
+				double et_vis = _etot_event * g_total_calib;
+				if (std::isfinite(et_vis)) g_h_etot->Fill(et_vis);
+		}
+
+		if (out_tree){
+			out_tree->Fill();
+			if (this_event.num % 10000 == 0) out_tree->AutoSave("SaveSelf");
+		}
 
 #ifdef DEBUG
 	printf("event decoded");

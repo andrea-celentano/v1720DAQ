@@ -25,6 +25,15 @@ void on_button5_clicked(GtkButton *button,gpointer user_data);
 void on_button2_clicked (GtkButton *button,gpointer data);
 void on_button3_clicked(GtkButton *button,gpointer user_data);
 void on_button4_clicked(GtkButton *button,gpointer user_data);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* Called after creating the output TFile to set up energy-monitor histograms */
+void setup_energy_monitor(TFile *file);
+#ifdef __cplusplus
+}
+#endif
 void on_button6_clicked(GtkButton *button,gpointer user_data);
 
 
