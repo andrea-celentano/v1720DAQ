@@ -4,6 +4,7 @@
 
 
 class V1720_board;
+class event;
 
 /*Struct to pass data to on_button2_clicked */
 typedef struct{
@@ -11,18 +12,14 @@ typedef struct{
   GtkWidget *window2T;
 }button2_data;
 
-/*Struct to pass data to on_button5_clicked */
+
+/*Struct to pass data to on_button3_clicked (START) / on_button4_clicked (STOP) / on_button5_clicked (QUIT) */
 typedef struct{
-  TFile *file;
-  TTree *tree;
-  std::ofstream *file_txt;
-  uint32_t **read_buf; 
-  uint32_t **write_buf;
+  TFile **file;    //pointer-to-pointer, ok
+  TTree **tree;    //pointer-to-pointer, ok
+  event *this_event;
   V1720_board *bd;
-}button5_data;
-
-
-
+}button_data;
 
 void on_button5_clicked(GtkButton *button,gpointer user_data);
 void on_button2_clicked (GtkButton *button,gpointer data);
