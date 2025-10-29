@@ -178,7 +178,14 @@ void setup_energy_monitor(TFile *file) {
 		TH1D *h = new TH1D(name.str().c_str(), title.str().c_str(), nb, xmin, xmax);
 		g_h_energy.push_back(h);
 	}
-	g_h_etot = new TH1D("h_energy_total","Total energy;Energy (arb);Counts", g_total_nbins, g_total_xmin, g_total_xmax);
+	// delete old total histogram (if any)
+    if (g_h_etot) {
+        if (g_h_etot->GetDirectory()) g_h_etot->SetDirectory(nullptr);
+        delete g_h_etot;
+        g_h_etot = nullptr;
+    }
+    // create new total histogram
+    g_h_etot = new TH1D("h_energy_total", "Total energy;Energy (arb);Counts", g_total_nbins, g_total_xmin, g_total_xmax);
 }
 
 /* The function to decode events and write them to disk/root file/whatever it is.. */
