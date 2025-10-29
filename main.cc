@@ -166,10 +166,7 @@ void setup_energy_monitor(TFile *file) {
 
 	// create histograms (attach to file if provided)
 	if (file) file->cd();
-	if (g_h_etot) delete g_h_etot;
-	for (auto h : g_h_energy){
-		if (h) delete h;
-	}
+
 	g_h_energy.clear();
 	for (int ch=0; ch<nch; ++ch) {
 		std::ostringstream name, title;
@@ -285,8 +282,6 @@ void decode_event(int event_size,uint32_t *write_buf) {
 		*write_buf = 0x0;
 		write_buf++;
 		ii++;
-		//fadc_data1 = -offset + fadc_data1; //THESE ARE bits, not mV
-		//fadc_data2 = -offset + fadc_data2; //THESE ARE bits, not mV
 		
 		this_event.fadc[ichannel][0][2*qq] = fadc_data1;
 		this_event.fadc[ichannel][0][2*qq + 1] = fadc_data2;
@@ -308,17 +303,17 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	      this_event.peaks[ichannel][0].peak_end = MyFadc->GetPeakEnd();
 	      this_event.peaks[ichannel][0].peak_val = MyFadc->GetPeakValue();
 	      this_event.peaks[ichannel][0].peak_position = MyFadc->GetPeakPosition();
-		  this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
-		  this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
-		 {
-			double e = this_event.peaks[ichannel][0].energy;
-			if ((int)g_h_energy.size() > ichannel) {
-					double evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
-					if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
-				}
-				_etot_event += (std::isfinite(e) ? e : 0.0);
-			}
-
+	      this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
+	      this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
+	      {
+		double e = this_event.peaks[ichannel][0].energy;
+		if ((int)g_h_energy.size() > ichannel) {
+		  double evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
+		  if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
+		}
+		_etot_event += (std::isfinite(evis) ? evis : 0.0);
+	      }
+	      
 	      temp_channel_mask=temp_channel_mask>>1;
 	      ichannel++;
 	     
@@ -384,7 +379,7 @@ void decode_event(int event_size,uint32_t *write_buf) {
 							double evis = e * ( (thechannel < (int)g_ch_calib.size()) ? g_ch_calib[thechannel] : 1.0 );
 							if (g_h_energy[thechannel]) g_h_energy[thechannel]->Fill(evis);
 						}
-						_etot_event += (std::isfinite(e) ? e : 0.0);
+						_etot_event += (std::isfinite(evis) ? evis : 0.0);
 					}
 					ipulse++;
 					itime += isize2;
@@ -395,8 +390,8 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	}
 		// Fill total-energy histogram (visualization)
 		if (g_h_etot) {
-				double et_vis = _etot_event * g_total_calib;
-				if (std::isfinite(et_vis)) g_h_etot->Fill(et_vis);
+		  double et_vis = _etot_event * g_total_calib;
+		  if (std::isfinite(et_vis)) g_h_etot->Fill(et_vis);
 		}
 
 		if (out_tree){
@@ -566,7 +561,7 @@ void * rate_fun(void *arg) {
 	TCanvas *c_ene2 = 0;
 
 #ifdef V1725
-	c_waveforms2=new TCanvas("Ene2", "Ene ch8-15", 1200, 800);
+	c_waveforms2=new TCanvas("Waveforms2", "Waveforms ch8-15", 1200, 800);
 	c_waveforms2->Divide(3, 3);
 	c_ene2=new TCanvas("Ene2", "Ene ch8-15", 1200, 800);
 	c_ene2->Divide(3, 3);
@@ -597,6 +592,9 @@ void * rate_fun(void *arg) {
 	int rate_counter = 0;
 	const int n_rate_points = 500;
 	double LSB=0.4884;
+
+
+
 #ifdef V1725
 	LSB=0.1221;
 #endif
@@ -621,48 +619,46 @@ void * rate_fun(void *arg) {
 					printf("No data...\n");
 				} else {
 					diff_rate = (float) nevents_diff * 1000.0f / (float) ElapsedTime;
-					for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
-
+			
 					
-						//Draw current waveform
-						waveforms[ii]->Clear();				   
-						if ((this_event.channel_mask >> ii) & 0x1 == 1) {
-							for (int jj = 0; jj < this_event.nFADC[ii][0]; jj++) {
-								waveforms[ii]->SetPoint(jj, jj * 4, this_event.fadc[ii][0][jj] * LSB);	//THESE ARE mV
-							}
-							if (ii<8){
-							  c_waveforms1->cd(ii + 1);
-							}
+					for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {				
+					  //Draw current waveform
+					  waveforms[ii]->Clear();				   
+					  if ((this_event.channel_mask >> ii) & 0x1 == 1) {
+					    for (int jj = 0; jj < this_event.nFADC[ii][0]; jj++) {
+					      waveforms[ii]->SetPoint(jj, jj * 4, this_event.fadc[ii][0][jj] * LSB);	//THESE ARE mV
+					    }
+					    if (ii<8){
+					      c_waveforms1->cd(ii + 1);
+					    }
 #ifdef V1725
-							else{
-							  c_waveforms2->cd(ii-8+1);
-							}
+					    else{
+					      c_waveforms2->cd(ii-8+1);
+					    }
 #endif
-							waveforms[ii]->Draw("ALP");
-
-							// Draw energy spectrum
-							if (ii<8){
-							  c_ene1->cd(ii + 1);
-							}
+					    waveforms[ii]->Draw("ALP");
+					    
+					    // Draw energy spectrum
+					    if (ii<8){
+					      c_ene1->cd(ii + 1);
+					    }
 #ifdef V1725
-							else{
-							  c_ene2->cd(ii-8+1);
-							}
+					    else{
+					      c_ene2->cd(ii-8+1);
+					    }
 #endif
-							g_h_energy[ii]->Draw();
-						}
-
+					    g_h_energy[ii]->Draw();
+					  } 
 					}
 
-					// printf("%i %i %i %i",nevents_diff,nevents,ElapsedTime,TotalElapsedTime);
 					printf("Trg Rate: %.2f Hz (differential), %.2f Hz (integrated) \n", diff_rate, int_rate);
-					// for (int jj=0;jj<FADC_CHANNELS_PER_BOARD;jj++) printf(" %i: E: %.2f V: %.2f T: %.2f Ped: %.2f start: %.2f stop: %.2f	\n",jj,this_event.energy[jj],this_event.peak_val[jj],this_event.time[jj],this_event.ped_mean[jj],this_event.peak_start[jj],this_event.peak_end[jj]);
+				
 					printf("\n");
 					nevents_diff = 0;
 				}
 				if (rate_counter == 0) {
-					gdiff_rate->Set(0);
-					gint_rate->Set(0);
+				  gdiff_rate->Set(0);
+				  gint_rate->Set(0);
 				}
 				gdiff_rate->SetPoint(rate_counter, rate_counter * TIME_ELAPSED_GUI_UPDATE_MS/1000., diff_rate);
 				gint_rate->SetPoint(rate_counter, rate_counter * TIME_ELAPSED_GUI_UPDATE_MS/1000., int_rate);
@@ -670,24 +666,29 @@ void * rate_fun(void *arg) {
 				c_waveforms1->cd(9);
 				gint_rate->Draw("AP");
 				gdiff_rate->Draw("PSAME");
-
+				
 				if (rate_counter > n_rate_points) {
-					gint_rate->GetXaxis()->SetRangeUser((rate_counter - n_rate_points) * 5, rate_counter * 5);
+				  gint_rate->GetXaxis()->SetRangeUser((rate_counter - n_rate_points) * 5, rate_counter * 5);
 				}
 				gint_rate->GetYaxis()->SetRangeUser(0, int_rate * 2);
-				//else grate->GetXaxis()->SetRangeUser(0,n_rate_points*5);
+				
 				c_waveforms1->Modified();
 				c_waveforms1->Update();
+				c_ene1->Modified();
+				c_ene1->Update();
 #ifdef V1725
-				c_waveforms2->Modified();
-				c_waveforms2->Update();
+			        c_waveforms2->Modified();
+				c_waveforms2->Update();	
+				c_ene2->Modified();
+				c_ene2->Update();
 #endif
+
 				PrevRateTime = CurrentTime;
 				pthread_mutex_unlock(&tree_mutex);
 			} //end if elapsed time
 		} //end if (start_stop==1, i.e. board is acquiring)
 		else {
-			rate_counter = 0;
+		  rate_counter = 0;
 		}
 	} //end while(1)
 }

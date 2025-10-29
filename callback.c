@@ -89,16 +89,15 @@ void on_button3_clicked(GtkButton *button, gpointer user_data) {
 		time(&now);
 		printf("Starting at %s", ctime(&now));
 		
-	    *file = new TFile(fname, "recreate");
+	        *file = new TFile(fname, "recreate");
 		*tree = new TTree("out", "out");
 
 		/* Setup energy-monitor histograms (visualization) and attach them to the output file */
 		setup_energy_monitor(*file);
 
-		//out_tree->Branch("FADC","std::vector < std::vector < int > >",&this_event.fadc);
-		
-		(*tree)->Branch("event",this_event);
-		
+
+		/*Prepare TTree*/
+		(*tree)->Branch("event",this_event);		
 	        (*this_event).trig_time = 0;
 		(*this_event).num = 0;
 
