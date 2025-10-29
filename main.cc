@@ -166,6 +166,7 @@ void setup_energy_monitor(TFile *file) {
 
 	// create histograms (attach to file if provided)
 	if (file) file->cd();
+	if (g_h_etot) delete g_h_etot;
 	for (auto h : g_h_energy){
 		if (h) delete h;
 	}
