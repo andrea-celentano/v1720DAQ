@@ -166,6 +166,9 @@ void setup_energy_monitor(TFile *file) {
 
 	// create histograms (attach to file if provided)
 	if (file) file->cd();
+	for (auto h : g_h_energy){
+		if (h) delete h;
+	}
 	g_h_energy.clear();
 	for (int ch=0; ch<nch; ++ch) {
 		std::ostringstream name, title;
@@ -304,16 +307,16 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	      this_event.peaks[ichannel][0].peak_end = MyFadc->GetPeakEnd();
 	      this_event.peaks[ichannel][0].peak_val = MyFadc->GetPeakValue();
 	      this_event.peaks[ichannel][0].peak_position = MyFadc->GetPeakPosition();
-				this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
-				this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
-				{
-					double e = this_event.peaks[ichannel][0].energy;
-					if ((int)g_h_energy.size() > ichannel) {
-						double evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
-						if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
-					}
-					_etot_event += (std::isfinite(e) ? e : 0.0);
+		  this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
+		  this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
+		 {
+			double e = this_event.peaks[ichannel][0].energy;
+			if ((int)g_h_energy.size() > ichannel) {
+					double evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
+					if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
 				}
+				_etot_event += (std::isfinite(e) ? e : 0.0);
+			}
 
 	      temp_channel_mask=temp_channel_mask>>1;
 	      ichannel++;
@@ -556,9 +559,16 @@ void * rate_fun(void *arg) {
 	TCanvas *c_waveforms1 = new TCanvas("Waveforms1", "Waveforms ch0-7", 1200, 800);
 	c_waveforms1->Divide(3, 3);
 	TCanvas *c_waveforms2 = 0;
+
+	TCanvas *c_ene1 = new TCanvas("Ene1", "Ene ch0-7", 1200, 800);
+	c_ene1->Divide(3, 3);
+	TCanvas *c_ene2 = 0;
+
 #ifdef V1725
-	c_waveforms2=new TCanvas("Waveforms2", "Waveforms ch8-15", 1200, 800);
+	c_waveforms2=new TCanvas("Ene2", "Ene ch8-15", 1200, 800);
 	c_waveforms2->Divide(3, 3);
+	c_ene2=new TCanvas("Ene2", "Ene ch8-15", 1200, 800);
+	c_ene2->Divide(3, 3);
 #endif
 	TGraph **waveforms = new TGraph*[FADC_CHANNELS_PER_BOARD];
 	for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
@@ -628,6 +638,17 @@ void * rate_fun(void *arg) {
 							}
 #endif
 							waveforms[ii]->Draw("ALP");
+
+							// Draw energy spectrum
+							if (ii<8){
+							  c_ene1->cd(ii + 1);
+							}
+#ifdef V1725
+							else{
+							  c_ene2->cd(ii-8+1);
+							}
+#endif
+							g_h_energy[ii]->Draw();
 						}
 
 					}
