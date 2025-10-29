@@ -1,0 +1,45 @@
+name: C/C++ CI (CentOS 9 + CERN ROOT)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: quay.io/centos/centos:stream9
+      options: --user root
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Install build tools and dependencies
+      run: |
+        dnf -y update
+        dnf -y install epel-release dnf-plugins-core
+        dnf -y groupinstall "Development Tools"
+        dnf -y install git cmake gcc-c++ make autoconf automake libtool which
+
+    - name: Add CERN ROOT repository
+      run: |
+        dnf -y install https://root.cern/download/root.repo
+
+    - name: Install CERN ROOT
+      run: |
+        dnf -y install root
+        root --version
+
+    - name: Build fadc library
+      run: |
+        cd fadc
+        make -B lib
+
+    - name: Build main project
+      run: |
+        cd ..
+        make
