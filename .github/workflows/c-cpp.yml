@@ -23,7 +23,7 @@ jobs:
         dnf -y update
         dnf -y install epel-release dnf-plugins-core
         dnf -y groupinstall "Development Tools"
-        dnf -y install git cmake gcc-c++ make autoconf automake libtool which
+        dnf -y install git cmake gcc-c++ make autoconf automake libtool which gtk2-devel wget
    
     - name: Enable CRB and install missing libs
       run: |
@@ -43,5 +43,4 @@ jobs:
 
     - name: Build main project
       run: |
-        cd ..
         make
