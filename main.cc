@@ -28,6 +28,9 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <vector>
+#include <sstream>
+#include <cmath>
 
 //#define DEBUG 2
 
@@ -79,6 +82,107 @@ int is_first = 1;
 int prev_samples = 0;
 int this_samples = 0;
 
+// --- Energy monitor globals (visualization only) ---
+std::vector<TH1D*> g_h_energy;
+TH1D *g_h_etot = nullptr;
+std::vector<int> g_ch_nbins;
+std::vector<double> g_ch_xmin;
+std::vector<double> g_ch_xmax;
+std::vector<double> g_ch_calib;
+int g_total_nbins = 100;
+double g_total_xmin = 0.0;
+double g_total_xmax = 1000.0;
+double g_total_calib = 1.0;
+
+/* Create and configure energy-monitor histograms and attach them to `file` (if provided).
+   This function is exposed to C callbacks via prototype in callback.h */
+void setup_energy_monitor(TFile *file) {
+	// defaults
+	int default_nbins = 100;
+	double default_xmin = 0.0;
+	double default_xmax = 1000.0;
+	double default_calib = 1.0;
+
+	int nch = FADC_CHANNELS_PER_BOARD;
+	g_ch_nbins.assign(nch, default_nbins);
+	g_ch_xmin.assign(nch, default_xmin);
+	g_ch_xmax.assign(nch, default_xmax);
+	g_ch_calib.assign(nch, default_calib);
+
+	// try to read configuration file (optional)
+	std::string cfg_path = "energy_monitor.cfg";
+	std::ifstream cfg(cfg_path.c_str());
+	if (cfg) {
+		std::string line;
+		while (std::getline(cfg, line)) {
+			std::string s = line;
+			// skip comments
+			if (s.find('#') == 0) continue;
+			size_t hashpos = s.find('#');
+			if (hashpos != std::string::npos) s = s.substr(0, hashpos);
+			// trim
+			auto ltrim = [](std::string &st){ size_t p = st.find_first_not_of(" \t\r\n"); if (p!=std::string::npos) st=st.substr(p); else st.clear(); };
+			auto rtrim = [](std::string &st){ size_t p = st.find_last_not_of(" \t\r\n"); if (p!=std::string::npos) st=st.substr(0,p+1); else st.clear(); };
+			ltrim(s); rtrim(s);
+			if (s.empty()) continue;
+			size_t eq = s.find('=');
+			if (eq==std::string::npos) continue;
+			std::string key = s.substr(0,eq);
+			std::string val = s.substr(eq+1);
+			ltrim(key); rtrim(key); ltrim(val); rtrim(val);
+
+			if (key=="nbins") default_nbins = std::stoi(val);
+			else if (key=="xmin") default_xmin = std::stod(val);
+			else if (key=="xmax") default_xmax = std::stod(val);
+			else if (key=="calib") default_calib = std::stod(val);
+			else if (key.rfind("ch",0)==0) {
+				size_t dot = key.find('.');
+				if (dot==std::string::npos) continue;
+				std::string chs = key.substr(2,dot-2);
+				int idx = std::stoi(chs);
+				if (idx<0 || idx>=nch) continue;
+				std::string param = key.substr(dot+1);
+				if (param=="nbins") g_ch_nbins[idx] = std::stoi(val);
+				else if (param=="xmin") g_ch_xmin[idx] = std::stod(val);
+				else if (param=="xmax") g_ch_xmax[idx] = std::stod(val);
+				else if (param=="calib") g_ch_calib[idx] = std::stod(val);
+			}
+			else if (key.rfind("total.",0)==0) {
+				std::string param = key.substr(6);
+				if (param=="nbins") g_total_nbins = std::stoi(val);
+				else if (param=="xmin") g_total_xmin = std::stod(val);
+				else if (param=="xmax") g_total_xmax = std::stod(val);
+				else if (param=="calib") g_total_calib = std::stod(val);
+			}
+		}
+		// apply global defaults where not overridden
+		for (int i=0;i<nch;i++){
+			if (g_ch_nbins[i]==default_nbins) g_ch_nbins[i]=default_nbins;
+			if (g_ch_xmin[i]==default_xmin) g_ch_xmin[i]=default_xmin;
+			if (g_ch_xmax[i]==default_xmax) g_ch_xmax[i]=default_xmax;
+			if (g_ch_calib[i]==default_calib) g_ch_calib[i]=default_calib;
+		}
+	}
+
+	// create histograms (attach to file if provided)
+	if (file) file->cd();
+
+	g_h_energy.clear();
+	for (int ch=0; ch<nch; ++ch) {
+		std::ostringstream name, title;
+		name << "h_energy_ch" << ch;
+		title << "Energy ch" << ch << ";Energy (arb);Counts";
+		int nb = g_ch_nbins[ch];
+		double xmin = g_ch_xmin[ch];
+		double xmax = g_ch_xmax[ch];
+		TH1D *h = new TH1D(name.str().c_str(), title.str().c_str(), nb, xmin, xmax);
+		g_h_energy.push_back(h);
+	}
+
+    // create new total histogram
+    g_h_etot = new TH1D("h_energy_total", "Total energy;Energy (arb);Counts", g_total_nbins, g_total_xmin, g_total_xmax);
+}
+
 /* The function to decode events and write them to disk/root file/whatever it is.. */
 /*At the beginning of the function,*write_buf point to the first word to be written or analized */
 void decode_event(int event_size,uint32_t *write_buf) {
@@ -93,6 +197,7 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	int jj = 0;
 	int ctrl;
 	int isize, isize2, ipulse, itime;
+	double _etot_event = 0.0; // accumulate total energy for this event (raw units)
 
 #ifdef V1725
 	offset=0x3FFF;
@@ -179,8 +284,6 @@ void decode_event(int event_size,uint32_t *write_buf) {
 		*write_buf = 0x0;
 		write_buf++;
 		ii++;
-		//fadc_data1 = -offset + fadc_data1; //THESE ARE bits, not mV
-		//fadc_data2 = -offset + fadc_data2; //THESE ARE bits, not mV
 		
 		this_event.fadc[ichannel][0][2*qq] = fadc_data1;
 		this_event.fadc[ichannel][0][2*qq + 1] = fadc_data2;
@@ -204,7 +307,16 @@ void decode_event(int event_size,uint32_t *write_buf) {
 	      this_event.peaks[ichannel][0].peak_position = MyFadc->GetPeakPosition();
 	      this_event.peaks[ichannel][0].time = MyFadc->GetTime(0);
 	      this_event.peaks[ichannel][0].energy = MyFadc->GetEnergy(0);
-
+	      {
+		double e = this_event.peaks[ichannel][0].energy;
+		double evis;
+		if ((int)g_h_energy.size() > ichannel) {
+		  evis = e * ( (ichannel < (int)g_ch_calib.size()) ? g_ch_calib[ichannel] : 1.0 );
+		  if (g_h_energy[ichannel]) g_h_energy[ichannel]->Fill(evis);
+		}
+		_etot_event += (std::isfinite(evis) ? evis : 0.0);
+	      }
+	      
 	      temp_channel_mask=temp_channel_mask>>1;
 	      ichannel++;
 	     
@@ -264,6 +376,15 @@ void decode_event(int event_size,uint32_t *write_buf) {
 					this_event.peaks[thechannel][ipulse].peak_position = MyFadc->GetPeakPosition();
 					this_event.peaks[thechannel][ipulse].time = MyFadc->GetTime(0) + this_event.peakStartTime[thechannel][ipulse];
 					this_event.peaks[thechannel][ipulse].energy = MyFadc->GetEnergy(0);
+					{
+						double e = this_event.peaks[thechannel][ipulse].energy;
+						double evis;
+						if ((int)g_h_energy.size() > thechannel) {
+							evis = e * ( (thechannel < (int)g_ch_calib.size()) ? g_ch_calib[thechannel] : 1.0 );
+							if (g_h_energy[thechannel]) g_h_energy[thechannel]->Fill(evis);
+						}
+						_etot_event += (std::isfinite(evis) ? evis : 0.0);
+					}
 					ipulse++;
 					itime += isize2;
 
@@ -271,10 +392,16 @@ void decode_event(int event_size,uint32_t *write_buf) {
 			}
 		}
 	}
-	if (out_tree){
-	  out_tree->Fill();
-	  if (this_event.num % 10000 == 0) out_tree->AutoSave("SaveSelf");
-	}
+		// Fill total-energy histogram (visualization)
+		if (g_h_etot) {
+		  double et_vis = _etot_event * g_total_calib;
+		  if (std::isfinite(et_vis)) g_h_etot->Fill(et_vis);
+		}
+
+		if (out_tree){
+			out_tree->Fill();
+			if (this_event.num % 10000 == 0) out_tree->AutoSave("SaveSelf");
+		}
 
 #ifdef DEBUG
 	printf("event decoded");
@@ -432,9 +559,16 @@ void * rate_fun(void *arg) {
 	TCanvas *c_waveforms1 = new TCanvas("Waveforms1", "Waveforms ch0-7", 1200, 800);
 	c_waveforms1->Divide(3, 3);
 	TCanvas *c_waveforms2 = 0;
+
+	TCanvas *c_ene1 = new TCanvas("Ene1", "Ene ch0-7", 1200, 800);
+	c_ene1->Divide(3, 3);
+	TCanvas *c_ene2 = 0;
+
 #ifdef V1725
 	c_waveforms2=new TCanvas("Waveforms2", "Waveforms ch8-15", 1200, 800);
 	c_waveforms2->Divide(3, 3);
+	c_ene2=new TCanvas("Ene2", "Ene ch8-15", 1200, 800);
+	c_ene2->Divide(3, 3);
 #endif
 	TGraph **waveforms = new TGraph*[FADC_CHANNELS_PER_BOARD];
 	for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
@@ -462,6 +596,9 @@ void * rate_fun(void *arg) {
 	int rate_counter = 0;
 	const int n_rate_points = 500;
 	double LSB=0.4884;
+
+
+
 #ifdef V1725
 	LSB=0.1221;
 #endif
@@ -486,37 +623,46 @@ void * rate_fun(void *arg) {
 					printf("No data...\n");
 				} else {
 					diff_rate = (float) nevents_diff * 1000.0f / (float) ElapsedTime;
-					for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {
-
+			
 					
-						//Draw current waveform
-						waveforms[ii]->Clear();				   
-						if ((this_event.channel_mask >> ii) & 0x1 == 1) {
-							for (int jj = 0; jj < this_event.nFADC[ii][0]; jj++) {
-								waveforms[ii]->SetPoint(jj, jj * 4, this_event.fadc[ii][0][jj] * LSB);	//THESE ARE mV
-							}
-							if (ii<8){
-							  c_waveforms1->cd(ii + 1);
-							}
+					for (int ii = 0; ii < FADC_CHANNELS_PER_BOARD; ii++) {				
+					  //Draw current waveform
+					  waveforms[ii]->Clear();				   
+					  if ((this_event.channel_mask >> ii) & 0x1 == 1) {
+					    for (int jj = 0; jj < this_event.nFADC[ii][0]; jj++) {
+					      waveforms[ii]->SetPoint(jj, jj * 4, this_event.fadc[ii][0][jj] * LSB);	//THESE ARE mV
+					    }
+					    if (ii<8){
+					      c_waveforms1->cd(ii + 1);
+					    }
 #ifdef V1725
-							else{
-							  c_waveforms2->cd(ii-8+1);
-							}
+					    else{
+					      c_waveforms2->cd(ii-8+1);
+					    }
 #endif
-							waveforms[ii]->Draw("ALP");
-						}
-
+					    waveforms[ii]->Draw("ALP");
+					    
+					    // Draw energy spectrum
+					    if (ii<8){
+					      c_ene1->cd(ii + 1);
+					    }
+#ifdef V1725
+					    else{
+					      c_ene2->cd(ii-8+1);
+					    }
+#endif
+					    g_h_energy[ii]->Draw();
+					  } 
 					}
 
-					// printf("%i %i %i %i",nevents_diff,nevents,ElapsedTime,TotalElapsedTime);
 					printf("Trg Rate: %.2f Hz (differential), %.2f Hz (integrated) \n", diff_rate, int_rate);
-					// for (int jj=0;jj<FADC_CHANNELS_PER_BOARD;jj++) printf(" %i: E: %.2f V: %.2f T: %.2f Ped: %.2f start: %.2f stop: %.2f	\n",jj,this_event.energy[jj],this_event.peak_val[jj],this_event.time[jj],this_event.ped_mean[jj],this_event.peak_start[jj],this_event.peak_end[jj]);
+				
 					printf("\n");
 					nevents_diff = 0;
 				}
 				if (rate_counter == 0) {
-					gdiff_rate->Set(0);
-					gint_rate->Set(0);
+				  gdiff_rate->Set(0);
+				  gint_rate->Set(0);
 				}
 				gdiff_rate->SetPoint(rate_counter, rate_counter * TIME_ELAPSED_GUI_UPDATE_MS/1000., diff_rate);
 				gint_rate->SetPoint(rate_counter, rate_counter * TIME_ELAPSED_GUI_UPDATE_MS/1000., int_rate);
@@ -524,24 +670,29 @@ void * rate_fun(void *arg) {
 				c_waveforms1->cd(9);
 				gint_rate->Draw("AP");
 				gdiff_rate->Draw("PSAME");
-
+				
 				if (rate_counter > n_rate_points) {
-					gint_rate->GetXaxis()->SetRangeUser((rate_counter - n_rate_points) * 5, rate_counter * 5);
+				  gint_rate->GetXaxis()->SetRangeUser((rate_counter - n_rate_points) * 5, rate_counter * 5);
 				}
 				gint_rate->GetYaxis()->SetRangeUser(0, int_rate * 2);
-				//else grate->GetXaxis()->SetRangeUser(0,n_rate_points*5);
+				
 				c_waveforms1->Modified();
 				c_waveforms1->Update();
+				c_ene1->Modified();
+				c_ene1->Update();
 #ifdef V1725
-				c_waveforms2->Modified();
-				c_waveforms2->Update();
+			        c_waveforms2->Modified();
+				c_waveforms2->Update();	
+				c_ene2->Modified();
+				c_ene2->Update();
 #endif
+
 				PrevRateTime = CurrentTime;
 				pthread_mutex_unlock(&tree_mutex);
 			} //end if elapsed time
 		} //end if (start_stop==1, i.e. board is acquiring)
 		else {
-			rate_counter = 0;
+		  rate_counter = 0;
 		}
 	} //end while(1)
 }

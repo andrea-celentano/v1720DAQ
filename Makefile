@@ -11,7 +11,7 @@ COPTS	=	-fPIC -DLINUX -Wall
 
 DEBUG_LEVEL = -DNODEBUG
 
-FLAGS	=	-Wall -s -g
+FLAGS	=	-Wall -s
 #FLAGS	=	-Wall
 
 DEPLIBS	=       -L. -l CAENVME -l ncurses -lc -lm -l CAENComm -lpthread
